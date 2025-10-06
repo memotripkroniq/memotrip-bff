@@ -1,0 +1,54 @@
+Tabulky DB
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  name       String?
+  isPremium  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  orders        Order[]
+  notifications Notification[]
+}
+
+model Book {
+  id        String   @id @default(uuid())
+  title     String
+  author    String
+  coverUrl  String?
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  userId     String
+  bookId     String
+  status     String
+  totalPrice Decimal
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
