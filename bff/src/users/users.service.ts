@@ -1,6 +1,6 @@
 // src/users/users.service.ts
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

@@ -7606,11 +7606,11 @@ export namespace Prisma {
     id: string
     email: string
     passwordhash: string
-    name: string
+    name: string | null
     country: string
     isPremiumMonthly: boolean | null
     ispremiumyearly: boolean | null
-    createdat: Date | null
+    createdat: Date
     _count: UserCountAggregateOutputType | null
     _min: UserMinAggregateOutputType | null
     _max: UserMaxAggregateOutputType | null
@@ -7708,11 +7708,11 @@ export namespace Prisma {
       id: string
       email: string
       passwordhash: string
-      name: string
+      name: string | null
       country: string
       isPremiumMonthly: boolean | null
       ispremiumyearly: boolean | null
-      createdat: Date | null
+      createdat: Date
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -14583,11 +14583,11 @@ export namespace Prisma {
     id?: UuidFilter<"User"> | string
     email?: StringFilter<"User"> | string
     passwordhash?: StringFilter<"User"> | string
-    name?: StringFilter<"User"> | string
+    name?: StringNullableFilter<"User"> | string | null
     country?: StringFilter<"User"> | string
     isPremiumMonthly?: BoolNullableFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableFilter<"User"> | boolean | null
-    createdat?: DateTimeNullableFilter<"User"> | Date | string | null
+    createdat?: DateTimeFilter<"User"> | Date | string
     GroupMembers?: GroupMembersListRelationFilter
     Groups?: GroupsListRelationFilter
     Notification?: NotificationListRelationFilter
@@ -14600,11 +14600,11 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     passwordhash?: SortOrder
-    name?: SortOrder
+    name?: SortOrderInput | SortOrder
     country?: SortOrder
     isPremiumMonthly?: SortOrderInput | SortOrder
     ispremiumyearly?: SortOrderInput | SortOrder
-    createdat?: SortOrderInput | SortOrder
+    createdat?: SortOrder
     GroupMembers?: GroupMembersOrderByRelationAggregateInput
     Groups?: GroupsOrderByRelationAggregateInput
     Notification?: NotificationOrderByRelationAggregateInput
@@ -14620,11 +14620,11 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     passwordhash?: StringFilter<"User"> | string
-    name?: StringFilter<"User"> | string
+    name?: StringNullableFilter<"User"> | string | null
     country?: StringFilter<"User"> | string
     isPremiumMonthly?: BoolNullableFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableFilter<"User"> | boolean | null
-    createdat?: DateTimeNullableFilter<"User"> | Date | string | null
+    createdat?: DateTimeFilter<"User"> | Date | string
     GroupMembers?: GroupMembersListRelationFilter
     Groups?: GroupsListRelationFilter
     Notification?: NotificationListRelationFilter
@@ -14637,11 +14637,11 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     passwordhash?: SortOrder
-    name?: SortOrder
+    name?: SortOrderInput | SortOrder
     country?: SortOrder
     isPremiumMonthly?: SortOrderInput | SortOrder
     ispremiumyearly?: SortOrderInput | SortOrder
-    createdat?: SortOrderInput | SortOrder
+    createdat?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
     _min?: UserMinOrderByAggregateInput
@@ -14654,11 +14654,11 @@ export namespace Prisma {
     id?: UuidWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
     passwordhash?: StringWithAggregatesFilter<"User"> | string
-    name?: StringWithAggregatesFilter<"User"> | string
+    name?: StringNullableWithAggregatesFilter<"User"> | string | null
     country?: StringWithAggregatesFilter<"User"> | string
     isPremiumMonthly?: BoolNullableWithAggregatesFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableWithAggregatesFilter<"User"> | boolean | null
-    createdat?: DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+    createdat?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
 
   export type GroupMembersWhereInput = {
@@ -15235,11 +15235,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
@@ -15252,11 +15252,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -15269,11 +15269,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
@@ -15286,11 +15286,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -15303,33 +15303,33 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
   }
 
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type GroupMembersCreateInput = {
@@ -15977,6 +15977,17 @@ export namespace Prisma {
     not?: NestedBoolNullableFilter<$PrismaModel> | boolean | null
   }
 
+  export type DateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
   export type GroupMembersListRelationFilter = {
     every?: GroupMembersWhereInput
     some?: GroupMembersWhereInput
@@ -16066,6 +16077,20 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedBoolNullableFilter<$PrismaModel>
     _max?: NestedBoolNullableFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type GroupsScalarRelationFilter = {
@@ -16468,6 +16493,10 @@ export namespace Prisma {
 
   export type NullableBoolFieldUpdateOperationsInput = {
     set?: boolean | null
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
   }
 
   export type GroupMembersUpdateManyWithoutUserNestedInput = {
@@ -17082,12 +17111,37 @@ export namespace Prisma {
     not?: NestedBoolNullableFilter<$PrismaModel> | boolean | null
   }
 
+  export type NestedDateTimeFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
   export type NestedBoolNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel> | null
     not?: NestedBoolNullableWithAggregatesFilter<$PrismaModel> | boolean | null
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedBoolNullableFilter<$PrismaModel>
     _max?: NestedBoolNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
   export type OrderCreateWithoutBookInput = {
@@ -17150,11 +17204,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Order?: OrderCreateNestedManyWithoutUserInput
@@ -17166,11 +17220,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Order?: OrderUncheckedCreateNestedManyWithoutUserInput
@@ -17198,11 +17252,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Order?: OrderUpdateManyWithoutUserNestedInput
@@ -17214,11 +17268,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Order?: OrderUncheckedUpdateManyWithoutUserNestedInput
@@ -17251,11 +17305,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
@@ -17267,11 +17321,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -17350,11 +17404,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
@@ -17366,11 +17420,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -17775,11 +17829,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
     Order?: OrderCreateNestedManyWithoutUserInput
@@ -17791,11 +17845,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
     Order?: OrderUncheckedCreateNestedManyWithoutUserInput
@@ -17846,11 +17900,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
     Order?: OrderUpdateManyWithoutUserNestedInput
@@ -17862,11 +17916,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     Order?: OrderUncheckedUpdateManyWithoutUserNestedInput
@@ -17898,11 +17952,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
     Order?: OrderCreateNestedManyWithoutUserInput
@@ -17914,11 +17968,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
     Order?: OrderUncheckedCreateNestedManyWithoutUserInput
@@ -17962,11 +18016,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
     Order?: OrderUpdateManyWithoutUserNestedInput
@@ -17978,11 +18032,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
     Order?: OrderUncheckedUpdateManyWithoutUserNestedInput
@@ -18069,11 +18123,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
@@ -18085,11 +18139,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -18150,11 +18204,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
@@ -18166,11 +18220,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
@@ -18202,11 +18256,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersCreateNestedManyWithoutUserInput
     Groups?: GroupsCreateNestedManyWithoutUserInput
     Notification?: NotificationCreateNestedManyWithoutUserInput
@@ -18218,11 +18272,11 @@ export namespace Prisma {
     id?: string
     email: string
     passwordhash: string
-    name: string
-    country: string
+    name?: string | null
+    country?: string
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
-    createdat?: Date | string | null
+    createdat?: Date | string
     GroupMembers?: GroupMembersUncheckedCreateNestedManyWithoutUserInput
     Groups?: GroupsUncheckedCreateNestedManyWithoutUserInput
     Notification?: NotificationUncheckedCreateNestedManyWithoutUserInput
@@ -18285,11 +18339,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUpdateManyWithoutUserNestedInput
     Groups?: GroupsUpdateManyWithoutUserNestedInput
     Notification?: NotificationUpdateManyWithoutUserNestedInput
@@ -18301,11 +18355,11 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     passwordhash?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
+    name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    createdat?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdat?: DateTimeFieldUpdateOperationsInput | Date | string
     GroupMembers?: GroupMembersUncheckedUpdateManyWithoutUserNestedInput
     Groups?: GroupsUncheckedUpdateManyWithoutUserNestedInput
     Notification?: NotificationUncheckedUpdateManyWithoutUserNestedInput
