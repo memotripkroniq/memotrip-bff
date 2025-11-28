@@ -37,7 +37,11 @@ export class UsersService {
         const user = await this.findUserByEmail(email);
         if (!user) return null;
 
-        // použijeme passwordhash
+        // Pokud je uživatel registrovaný přes Google → nemá heslo
+        if (!user.passwordhash) {
+            return null;
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.passwordhash);
         return isPasswordValid ? user : null;
     }
