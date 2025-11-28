@@ -8,12 +8,15 @@ import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { OAuth2Client } from 'google-auth-library';
+
 
 @Injectable()
 export class AuthService {
     constructor(
         private prisma: PrismaService,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
     ) {}
 
     // ======================
@@ -57,6 +60,14 @@ export class AuthService {
             });
         }
 
+        // Pokud user vznikl přes Google → nemá passwordhash
+        if (!user.passwordhash) {
+            throw new UnauthorizedException({
+                error: "NO_PASSWORD_FOR_THIS_USER",
+                message: "This account uses Google login"
+            });
+        }
+
         const validPassword = await bcrypt.compare(password, user.passwordhash);
 
         if (!validPassword) {
@@ -86,4 +97,57 @@ export class AuthService {
             access_token: this.jwtService.sign(payload),
         };
     }
+
+    async googleLogin(idToken: string) {
+        // 1) Verify token with Google
+        const ticket = await this.googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            throw new UnauthorizedException("Google login did not return an email");
+        }
+
+        const email = payload.email;
+        const name = payload.name ?? "Google User";
+        const googleUserId = payload.sub;
+
+        // 2) Find user
+        let user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
+        // 3) Create user if not exists
+        if (!user) {
+            user = await this.prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    passwordhash: null,
+                    provider: 'GOOGLE',
+                    providerId: googleUserId,
+                },
+            });
+        }
+
+        // 4) Create JWT tokens
+        const accessToken = this.jwtService.sign(
+            { userId: user.id },
+            { expiresIn: '15m' }
+        );
+
+        const refreshToken = this.jwtService.sign(
+            { userId: user.id },
+            { expiresIn: '30d' }
+        );
+
+        return {
+            accessToken,
+            refreshToken,
+        };
+    }
+
+
 }

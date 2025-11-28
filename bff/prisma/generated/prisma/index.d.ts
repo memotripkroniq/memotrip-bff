@@ -7467,6 +7467,8 @@ export namespace Prisma {
     passwordhash: string | null
     name: string | null
     country: string | null
+    provider: string | null
+    providerId: string | null
     isPremiumMonthly: boolean | null
     ispremiumyearly: boolean | null
     createdat: Date | null
@@ -7478,6 +7480,8 @@ export namespace Prisma {
     passwordhash: string | null
     name: string | null
     country: string | null
+    provider: string | null
+    providerId: string | null
     isPremiumMonthly: boolean | null
     ispremiumyearly: boolean | null
     createdat: Date | null
@@ -7489,6 +7493,8 @@ export namespace Prisma {
     passwordhash: number
     name: number
     country: number
+    provider: number
+    providerId: number
     isPremiumMonthly: number
     ispremiumyearly: number
     createdat: number
@@ -7502,6 +7508,8 @@ export namespace Prisma {
     passwordhash?: true
     name?: true
     country?: true
+    provider?: true
+    providerId?: true
     isPremiumMonthly?: true
     ispremiumyearly?: true
     createdat?: true
@@ -7513,6 +7521,8 @@ export namespace Prisma {
     passwordhash?: true
     name?: true
     country?: true
+    provider?: true
+    providerId?: true
     isPremiumMonthly?: true
     ispremiumyearly?: true
     createdat?: true
@@ -7524,6 +7534,8 @@ export namespace Prisma {
     passwordhash?: true
     name?: true
     country?: true
+    provider?: true
+    providerId?: true
     isPremiumMonthly?: true
     ispremiumyearly?: true
     createdat?: true
@@ -7605,9 +7617,11 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     email: string
-    passwordhash: string
+    passwordhash: string | null
     name: string | null
     country: string
+    provider: string | null
+    providerId: string | null
     isPremiumMonthly: boolean | null
     ispremiumyearly: boolean | null
     createdat: Date
@@ -7636,6 +7650,8 @@ export namespace Prisma {
     passwordhash?: boolean
     name?: boolean
     country?: boolean
+    provider?: boolean
+    providerId?: boolean
     isPremiumMonthly?: boolean
     ispremiumyearly?: boolean
     createdat?: boolean
@@ -7654,6 +7670,8 @@ export namespace Prisma {
     passwordhash?: boolean
     name?: boolean
     country?: boolean
+    provider?: boolean
+    providerId?: boolean
     isPremiumMonthly?: boolean
     ispremiumyearly?: boolean
     createdat?: boolean
@@ -7665,6 +7683,8 @@ export namespace Prisma {
     passwordhash?: boolean
     name?: boolean
     country?: boolean
+    provider?: boolean
+    providerId?: boolean
     isPremiumMonthly?: boolean
     ispremiumyearly?: boolean
     createdat?: boolean
@@ -7676,12 +7696,14 @@ export namespace Prisma {
     passwordhash?: boolean
     name?: boolean
     country?: boolean
+    provider?: boolean
+    providerId?: boolean
     isPremiumMonthly?: boolean
     ispremiumyearly?: boolean
     createdat?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "passwordhash" | "name" | "country" | "isPremiumMonthly" | "ispremiumyearly" | "createdat", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "passwordhash" | "name" | "country" | "provider" | "providerId" | "isPremiumMonthly" | "ispremiumyearly" | "createdat", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     GroupMembers?: boolean | User$GroupMembersArgs<ExtArgs>
     Groups?: boolean | User$GroupsArgs<ExtArgs>
@@ -7707,9 +7729,11 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       email: string
-      passwordhash: string
+      passwordhash: string | null
       name: string | null
       country: string
+      provider: string | null
+      providerId: string | null
       isPremiumMonthly: boolean | null
       ispremiumyearly: boolean | null
       createdat: Date
@@ -8147,6 +8171,8 @@ export namespace Prisma {
     readonly passwordhash: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
     readonly country: FieldRef<"User", 'String'>
+    readonly provider: FieldRef<"User", 'String'>
+    readonly providerId: FieldRef<"User", 'String'>
     readonly isPremiumMonthly: FieldRef<"User", 'Boolean'>
     readonly ispremiumyearly: FieldRef<"User", 'Boolean'>
     readonly createdat: FieldRef<"User", 'DateTime'>
@@ -14130,6 +14156,8 @@ export namespace Prisma {
     passwordhash: 'passwordhash',
     name: 'name',
     country: 'country',
+    provider: 'provider',
+    providerId: 'providerId',
     isPremiumMonthly: 'isPremiumMonthly',
     ispremiumyearly: 'ispremiumyearly',
     createdat: 'createdat'
@@ -14582,9 +14610,11 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: UuidFilter<"User"> | string
     email?: StringFilter<"User"> | string
-    passwordhash?: StringFilter<"User"> | string
+    passwordhash?: StringNullableFilter<"User"> | string | null
     name?: StringNullableFilter<"User"> | string | null
     country?: StringFilter<"User"> | string
+    provider?: StringNullableFilter<"User"> | string | null
+    providerId?: StringNullableFilter<"User"> | string | null
     isPremiumMonthly?: BoolNullableFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableFilter<"User"> | boolean | null
     createdat?: DateTimeFilter<"User"> | Date | string
@@ -14599,9 +14629,11 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     email?: SortOrder
-    passwordhash?: SortOrder
+    passwordhash?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     country?: SortOrder
+    provider?: SortOrderInput | SortOrder
+    providerId?: SortOrderInput | SortOrder
     isPremiumMonthly?: SortOrderInput | SortOrder
     ispremiumyearly?: SortOrderInput | SortOrder
     createdat?: SortOrder
@@ -14619,9 +14651,11 @@ export namespace Prisma {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
-    passwordhash?: StringFilter<"User"> | string
+    passwordhash?: StringNullableFilter<"User"> | string | null
     name?: StringNullableFilter<"User"> | string | null
     country?: StringFilter<"User"> | string
+    provider?: StringNullableFilter<"User"> | string | null
+    providerId?: StringNullableFilter<"User"> | string | null
     isPremiumMonthly?: BoolNullableFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableFilter<"User"> | boolean | null
     createdat?: DateTimeFilter<"User"> | Date | string
@@ -14636,9 +14670,11 @@ export namespace Prisma {
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     email?: SortOrder
-    passwordhash?: SortOrder
+    passwordhash?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     country?: SortOrder
+    provider?: SortOrderInput | SortOrder
+    providerId?: SortOrderInput | SortOrder
     isPremiumMonthly?: SortOrderInput | SortOrder
     ispremiumyearly?: SortOrderInput | SortOrder
     createdat?: SortOrder
@@ -14653,9 +14689,11 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: UuidWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
-    passwordhash?: StringWithAggregatesFilter<"User"> | string
+    passwordhash?: StringNullableWithAggregatesFilter<"User"> | string | null
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
     country?: StringWithAggregatesFilter<"User"> | string
+    provider?: StringNullableWithAggregatesFilter<"User"> | string | null
+    providerId?: StringNullableWithAggregatesFilter<"User"> | string | null
     isPremiumMonthly?: BoolNullableWithAggregatesFilter<"User"> | boolean | null
     ispremiumyearly?: BoolNullableWithAggregatesFilter<"User"> | boolean | null
     createdat?: DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -15234,9 +15272,11 @@ export namespace Prisma {
   export type UserCreateInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -15251,9 +15291,11 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -15268,9 +15310,11 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15285,9 +15329,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15302,9 +15348,11 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -15313,9 +15361,11 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -15324,9 +15374,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16044,6 +16096,8 @@ export namespace Prisma {
     passwordhash?: SortOrder
     name?: SortOrder
     country?: SortOrder
+    provider?: SortOrder
+    providerId?: SortOrder
     isPremiumMonthly?: SortOrder
     ispremiumyearly?: SortOrder
     createdat?: SortOrder
@@ -16055,6 +16109,8 @@ export namespace Prisma {
     passwordhash?: SortOrder
     name?: SortOrder
     country?: SortOrder
+    provider?: SortOrder
+    providerId?: SortOrder
     isPremiumMonthly?: SortOrder
     ispremiumyearly?: SortOrder
     createdat?: SortOrder
@@ -16066,6 +16122,8 @@ export namespace Prisma {
     passwordhash?: SortOrder
     name?: SortOrder
     country?: SortOrder
+    provider?: SortOrder
+    providerId?: SortOrder
     isPremiumMonthly?: SortOrder
     ispremiumyearly?: SortOrder
     createdat?: SortOrder
@@ -17203,9 +17261,11 @@ export namespace Prisma {
   export type UserCreateWithoutNotificationInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17219,9 +17279,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutNotificationInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17251,9 +17313,11 @@ export namespace Prisma {
   export type UserUpdateWithoutNotificationInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17267,9 +17331,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutNotificationInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17304,9 +17370,11 @@ export namespace Prisma {
   export type UserCreateWithoutOrderInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17320,9 +17388,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutOrderInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17403,9 +17473,11 @@ export namespace Prisma {
   export type UserUpdateWithoutOrderInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17419,9 +17491,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutOrderInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17828,9 +17902,11 @@ export namespace Prisma {
   export type UserCreateWithoutGroupMembersInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17844,9 +17920,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutGroupMembersInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17899,9 +17977,11 @@ export namespace Prisma {
   export type UserUpdateWithoutGroupMembersInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17915,9 +17995,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutGroupMembersInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17951,9 +18033,11 @@ export namespace Prisma {
   export type UserCreateWithoutGroupsInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -17967,9 +18051,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutGroupsInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -18015,9 +18101,11 @@ export namespace Prisma {
   export type UserUpdateWithoutGroupsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18031,9 +18119,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutGroupsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18122,9 +18212,11 @@ export namespace Prisma {
   export type UserCreateWithoutTripSharesInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -18138,9 +18230,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutTripSharesInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -18203,9 +18297,11 @@ export namespace Prisma {
   export type UserUpdateWithoutTripSharesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18219,9 +18315,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutTripSharesInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18255,9 +18353,11 @@ export namespace Prisma {
   export type UserCreateWithoutTripsInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -18271,9 +18371,11 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutTripsInput = {
     id?: string
     email: string
-    passwordhash: string
+    passwordhash?: string | null
     name?: string | null
     country?: string
+    provider?: string | null
+    providerId?: string | null
     isPremiumMonthly?: boolean | null
     ispremiumyearly?: boolean | null
     createdat?: Date | string
@@ -18338,9 +18440,11 @@ export namespace Prisma {
   export type UserUpdateWithoutTripsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -18354,9 +18458,11 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutTripsInput = {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
-    passwordhash?: StringFieldUpdateOperationsInput | string
+    passwordhash?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     country?: StringFieldUpdateOperationsInput | string
+    provider?: NullableStringFieldUpdateOperationsInput | string | null
+    providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isPremiumMonthly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     ispremiumyearly?: NullableBoolFieldUpdateOperationsInput | boolean | null
     createdat?: DateTimeFieldUpdateOperationsInput | Date | string

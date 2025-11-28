@@ -168,6 +168,8 @@ exports.Prisma.UserScalarFieldEnum = {
   passwordhash: 'passwordhash',
   name: 'name',
   country: 'country',
+  provider: 'provider',
+  providerId: 'providerId',
   isPremiumMonthly: 'isPremiumMonthly',
   ispremiumyearly: 'ispremiumyearly',
   createdat: 'createdat'
