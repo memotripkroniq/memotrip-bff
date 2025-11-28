@@ -1,23 +1,27 @@
 import {
     Injectable,
     BadRequestException,
-    UnauthorizedException, NotFoundException,
+    UnauthorizedException,
+    NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 
-
 @Injectable()
 export class AuthService {
+
+    private googleClient: OAuth2Client;
+
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
-        private googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-    ) {}
+    ) {
+        // inicializace nesmí být v parametru — musí být zde
+        this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    }
 
     // ======================
     // REGISTER
@@ -148,6 +152,4 @@ export class AuthService {
             refreshToken,
         };
     }
-
-
 }
