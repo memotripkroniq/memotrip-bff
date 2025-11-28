@@ -1,98 +1,154 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## 🚀 MemoTrip BFF
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend pro MemoTrip — NestJS + Prisma + PostgreSQL + Railway
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+<p align="center"> <img src="https://nestjs.com/img/logo-small.svg" width="80" /> </p>
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+## 📦 Project setup
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
-
+# ▶️ Run the project
 ```bash
-# development
+## development
 $ npm run start
 
-# watch mode
+## watch mode (recommended)
 $ npm run start:dev
 
-# production mode
+## production mode
 $ npm run start:prod
 ```
 
-## Run tests
-
+# 🌍 Environment configuration
+## 🧩 Local .env
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+DATABASE_URL="postgresql://postgres:<heslo>@localhost:5432/memotrip"
+JWT_SECRET="local_secret"
+JWT_EXPIRES_IN="7d"
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+## ☁️ Staging .env.staging (Railway)
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+DATABASE_URL="postgresql://postgres:<secret>@<railway-host>:5432/railway"
+JWT_SECRET="staging_secret"
+JWT_EXPIRES_IN="7d"
+```
+👍 .env.staging a .env.production nepatří do Gitu.
+
+# 🧬 Prisma – database commands
+```bash
+# apply local migrations
+$ npx prisma migrate dev --name init
+
+# push schema without migration (staging)
+$ npx prisma db push
+
+# regenerate client
+$ npx prisma generate
+
+# open visual DB studio
+$ npx prisma studio
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+# 📡 API Endpoints
+## 👤 Auth
+| Method | Endpoint      | Description          | Body                          |
+|--------|---------------|----------------------|-------------------------------|
+| POST   | /auth/signup  | Registrace uživatele | { email, password, name }     |
+| POST   | /auth/login   | Přihlášení           | { email, password }           |
 
-## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🧑‍🤝‍🧑 Users
+| Method | Endpoint   | Description                           |
+|--------|------------|-------------------------------------- |
+| GET    | /users/me  | Vrátí informace o sobě (JWT required) |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🧭 Trips
+| Method | Endpoint      | Description       |
+|--------|---------------|-------------------|
+| GET    | /trips        | List tripů        |
+| POST   | /trips        | Vytvoření tripu   |
+| GET    | /trips/:id    | Detail tripu      |
+| DELETE | /trips/:id    | Smazání           |
 
-## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 📚 Books (pokud používáš)
+| Method | Endpoint     | Description        |
+|--------|--------------|--------------------|
+| GET    | /books       | List všech knih    |
+| POST   | /books       | Vytvoří knihu      |
+| GET    | /books/:id   | Detail knihy       |
 
-## Stay in touch
+## 🎨 Themes
+| Method | Endpoint      | Description      |
+|--------|---------------|------------------|
+| GET    | /themes       | Všechny themes   |
+| GET    | /themes/:id   | Detail           |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 👥 Groups
+| Method | Endpoint             | Description     |
+|--------|----------------------|-----------------|
+| GET    | /groups              | List skupin     |
+| POST   | /groups              | Create group    |
+| POST   | /groups/:id/members  | Add member      |
 
-## License
+# 📱 Android Build Flavors
+## 🟦 Local (emulátor)
+```grandle
+BASE_URL = "http://10.0.2.2:3000/"
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🟧 WiFi (telefon v LAN)
+```grandle
+BASE_URL = "http://192.168.x.x:3000/"
+```
+
+## 🟠 Staging (Railway cloud)
+```grandle
+BASE_URL = "https://memotrip-bff-production.up.railway.app/"
+```
+
+## 🟢 Production
+```grandle
+BASE_URL = "https://api.memotrip.app/"
+```
+
+# 🧳 Railway Deployment
+```bash
+# login
+$ railway login
+
+
+# link project
+$ railway link
+
+# deploy
+$ railway up
+
+# cloud env vars
+$ railway open
+```
+
+# 📁 Folder Structure
+```bash
+/prisma
+    schema.prisma
+    migrations/
+
+/src
+    /auth
+    /users
+    /trips
+    /groups
+    main.ts
+```
+
+# 🔒 Git ignore rules
+```bash
+# ignore all env files
+.env
+.env.*
+!.env.example
+```
