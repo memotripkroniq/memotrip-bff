@@ -34,15 +34,22 @@ export class UsersService {
 
     // ověření uživatele (login)
     async validateUser(email: string, password: string) {
+        console.log("👤 VALIDATE USER:", email);
+
         const user = await this.findUserByEmail(email);
+        console.log("🔎 USER:", user);
+
         if (!user) return null;
 
-        // Pokud je uživatel registrovaný přes Google → nemá heslo
         if (!user.passwordhash) {
+            console.log("⚠️ USER HAS NO PASSWORD (Google?)");
             return null;
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.passwordhash);
+        console.log("🔐 PASSWORD VALID:", isPasswordValid);
+
         return isPasswordValid ? user : null;
     }
+
 }

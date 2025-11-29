@@ -29,40 +29,38 @@ export class AuthService {
     // ======================
     // REGISTER
     // ======================
-    async register({ email, password }: RegisterDto) {
-        // 1️⃣ trim + lowercase pro jistotu
-        const cleanEmail = email.trim().toLowerCase();
+    async register(data: RegisterDto) {
+        console.log("🔥 SIGNUP START", data);
 
-        // 2️⃣ existuje už?
+        const { email, password } = data;
+
         const existing = await this.prisma.user.findUnique({
-            where: { email: cleanEmail },
+            where: { email },
         });
 
+        console.log("🔍 EXISTING USER:", existing);
+
         if (existing) {
-            throw new BadRequestException("Email already exists");
+            console.log("❌ Email already exists");
+            throw new BadRequestException('Email already exists');
         }
 
-        // 3️⃣ hash hesla
         const hashed = await bcrypt.hash(password, 10);
+        console.log("🔐 HASHED PASSWORD:", hashed);
 
-        // 4️⃣ vytvoření uživatele
         const user = await this.prisma.user.create({
             data: {
-                email: cleanEmail,
+                email,
                 passwordhash: hashed,
-                name: null,            // 🔥 explicitně null
-                provider: null,        // 🔥 žádný provider
-                providerId: null,      // 🔥 žádné Google ID
             },
         });
 
-        // 5️⃣ vrať token
-        return {
-            access_token: this.jwtService.sign({
-                sub: user.id,
-                email: user.email,
-            }),
-        };
+        console.log("✅ USER CREATED:", user);
+
+        const token = this.generateToken(user.id, user.email);
+
+        console.log("🎟️ TOKEN:", token);
+        return token;
     }
 
 
@@ -70,18 +68,26 @@ export class AuthService {
     // LOGIN
     // ======================
     async login(email: string, password: string) {
+        console.log("🔥 LOGIN START:", email, password);
+
         const user = await this.usersService.validateUser(email, password);
 
+        console.log("🔍 VALIDATED USER:", user);
+
         if (!user) {
-            // email existuje, ale nemá heslo → Google user
             const exists = await this.usersService.findUserByEmail(email);
+            console.log("🔎 FIND USER:", exists);
+
             if (exists && !exists.passwordhash) {
+                console.log("❌ LOGIN GOOGLE ONLY");
                 throw new UnauthorizedException("NO_PASSWORD_USE_GOOGLE");
             }
 
-            // email neexistuje nebo špatné heslo
+            console.log("❌ WRONG PASSWORD");
             throw new UnauthorizedException("WRONG_PASSWORD");
         }
+
+        console.log("✅ LOGIN SUCCESS:", user.id);
 
         const token = this.jwtService.sign({
             sub: user.id,
@@ -90,6 +96,7 @@ export class AuthService {
 
         return { access_token: token };
     }
+
 
 
     // ======================
