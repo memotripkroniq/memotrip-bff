@@ -111,7 +111,6 @@ export class AuthService {
     }
 
     async googleLogin(idToken: string) {
-        // 1) Verify token with Google
         const ticket = await this.googleClient.verifyIdToken({
             idToken,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -126,12 +125,10 @@ export class AuthService {
         const name = payload.name ?? "Google User";
         const googleUserId = payload.sub;
 
-        // 2) Find user
-        let user = await this.prisma.user.findUnique({
-            where: { email },
-        });
+        // Check user
+        let user = await this.prisma.user.findUnique({ where: { email } });
 
-        // 3) Create user if not exists
+        // Create if missing
         if (!user) {
             user = await this.prisma.user.create({
                 data: {
@@ -144,7 +141,7 @@ export class AuthService {
             });
         }
 
-        // 4) Create JWT tokens
+        // Issue tokens
         const accessToken = this.jwtService.sign(
             { userId: user.id },
             { expiresIn: '15m' }
@@ -155,9 +152,7 @@ export class AuthService {
             { expiresIn: '30d' }
         );
 
-        return {
-            accessToken,
-            refreshToken,
-        };
+        return { accessToken, refreshToken };
     }
+
 }
