@@ -29,28 +29,42 @@ export class AuthService {
     // ======================
     // REGISTER
     // ======================
-    async register(data: RegisterDto) {
-        const { email, password } = data;
+    async register({ email, password }: RegisterDto) {
+        // 1️⃣ trim + lowercase pro jistotu
+        const cleanEmail = email.trim().toLowerCase();
 
+        // 2️⃣ existuje už?
         const existing = await this.prisma.user.findUnique({
-            where: { email },
+            where: { email: cleanEmail },
         });
 
         if (existing) {
-            throw new BadRequestException('Email already exists');
+            throw new BadRequestException("Email already exists");
         }
 
+        // 3️⃣ hash hesla
         const hashed = await bcrypt.hash(password, 10);
 
+        // 4️⃣ vytvoření uživatele
         const user = await this.prisma.user.create({
             data: {
-                email,
+                email: cleanEmail,
                 passwordhash: hashed,
+                name: null,            // 🔥 explicitně null
+                provider: null,        // 🔥 žádný provider
+                providerId: null,      // 🔥 žádné Google ID
             },
         });
 
-        return this.generateToken(user.id, user.email);
+        // 5️⃣ vrať token
+        return {
+            access_token: this.jwtService.sign({
+                sub: user.id,
+                email: user.email,
+            }),
+        };
     }
+
 
     // ======================
     // LOGIN
