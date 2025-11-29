@@ -9,6 +9,8 @@ import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
+import { UsersService } from '../users/users.service';
+
 
 @Injectable()
 export class AuthService {
@@ -16,8 +18,9 @@ export class AuthService {
     private googleClient: OAuth2Client;
 
     constructor(
-        private prisma: PrismaService,
-        private jwtService: JwtService,
+        private readonly prisma: PrismaService,
+        private readonly usersService: UsersService,
+        private readonly jwtService: JwtService,
     ) {
         // inicializace nesmí být v parametru — musí být zde
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -53,43 +56,27 @@ export class AuthService {
     // LOGIN
     // ======================
     async login(email: string, password: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-        });
+        const user = await this.usersService.validateUser(email, password);
 
         if (!user) {
-            throw new NotFoundException({
-                error: "EMAIL_NOT_FOUND",
-                message: "Incorrect email"
-            });
+            // email existuje, ale nemá heslo → Google user
+            const exists = await this.usersService.findUserByEmail(email);
+            if (exists && !exists.passwordhash) {
+                throw new UnauthorizedException("NO_PASSWORD_USE_GOOGLE");
+            }
+
+            // email neexistuje nebo špatné heslo
+            throw new UnauthorizedException("WRONG_PASSWORD");
         }
 
-        // Pokud user vznikl přes Google → nemá passwordhash
-        if (!user.passwordhash) {
-            throw new UnauthorizedException({
-                error: "NO_PASSWORD_FOR_THIS_USER",
-                message: "This account uses Google login"
-            });
-        }
-
-        const validPassword = await bcrypt.compare(password, user.passwordhash);
-
-        if (!validPassword) {
-            throw new UnauthorizedException({
-                error: "WRONG_PASSWORD",
-                message: "Incorrect password"
-            });
-        }
-
-        const token = await this.jwtService.signAsync({
+        const token = this.jwtService.sign({
             sub: user.id,
             email: user.email
         });
 
-        return {
-            access_token: token
-        };
+        return { access_token: token };
     }
+
 
     // ======================
     // JWT TOKEN
