@@ -90,70 +90,108 @@ export class AuthService {
         try {
             console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
 
-            // ⭐ ZDE JE OPRAVENÉ AUDIENCE (Android + Web)
-            const ticket: LoginTicket = await this.googleClient.verifyIdToken({
+            // =====================
+            // ENV DEBUG LOGY
+            // =====================
+            console.log("🌍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
+            console.log("🤖 GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
+
+            const audienceList = [
+                process.env.GOOGLE_ANDROID_CLIENT_ID,
+                process.env.GOOGLE_CLIENT_ID,
+            ];
+
+            console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
+
+            // =====================
+            // VERIFY TOKEN
+            // =====================
+            // =====================
+// VERIFY TOKEN
+// =====================
+
+// @ts-ignore – Google Auth má špatné typy, runtime OK
+            const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: [
-                    process.env.GOOGLE_ANDROID_CLIENT_ID!,
-                    process.env.GOOGLE_CLIENT_ID!,
-                ],
+                // @ts-ignore
+                audience: audienceList,
             });
 
-            console.log("🔥 GOOGLE LOGIN: Token verified successfully");
+            console.log("✅ GOOGLE LOGIN: Token verified — raw ticket:", ticket);
 
+// @ts-ignore – getPayload existuje, jen typově chybí
             const payload = ticket.getPayload();
-            console.log("🔥 GOOGLE LOGIN PAYLOAD:", payload);
+            console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
 
-            if (!payload || !payload.email) {
-                console.error("❌ Google payload missing email");
-                throw new UnauthorizedException("Google login did not return an email");
+
+            // =====================
+            // VALIDACE
+            // =====================
+            if (!payload) {
+                console.error("❌ NO PAYLOAD RETURNED FROM GOOGLE");
+                throw new UnauthorizedException("NO_PAYLOAD");
             }
 
-            const email = payload.email;
-            const name = payload.name ?? "Google User";
-            const googleUserId = payload.sub;
+            if (!payload.email) {
+                console.error("❌ PAYLOAD HAS NO EMAIL");
+                throw new UnauthorizedException("NO_EMAIL");
+            }
 
-            let user = await this.prisma.user.findUnique({
-                where: { email },
-            });
+            console.log("📧 EMAIL:", payload.email);
+            console.log("🆔 GOOGLE SUB:", payload.sub);
+            console.log("👤 NAME:", payload.name);
+
+            const email = payload.email;
+            const googleUserId = payload.sub;
+            const name = payload.name ?? "Google User";
+
+            // =====================
+            // UŽIVATEL V DATABÁZI
+            // =====================
+            console.log("🔎 Checking if user exists in DB…");
+
+            let user = await this.prisma.user.findUnique({ where: { email } });
 
             if (!user) {
-                console.log("🔥 GOOGLE LOGIN: Creating new user");
+                console.log("🆕 User not found → creating");
 
                 user = await this.prisma.user.create({
                     data: {
                         email,
                         name,
-                        passwordhash: null,
-                        provider: 'GOOGLE',
+                        provider: "GOOGLE",
                         providerId: googleUserId,
+                        passwordhash: null,
                     },
                 });
             } else {
-                console.log("🔥 GOOGLE LOGIN: User already exists, logging in");
+                console.log("👋 User exists, logging in");
             }
 
+            console.log("🧪 DB User:", user);
+
+            // =====================
+            // GENERATE TOKENS
+            // =====================
             const accessToken = this.jwtService.sign(
                 { userId: user.id },
-                { expiresIn: '15m' }
+                { expiresIn: "15m" }
             );
 
             const refreshToken = this.jwtService.sign(
                 { userId: user.id },
-                { expiresIn: '30d' }
+                { expiresIn: "30d" }
             );
 
-            console.log("🔥 GOOGLE LOGIN: Tokens generated");
+            console.log("🎫 TOKENS CREATED OK");
 
-            return {
-                accessToken,
-                refreshToken,
-            };
+            return { accessToken, refreshToken };
 
         } catch (e) {
             console.error("❌ GOOGLE LOGIN ERROR:", e);
-            throw new UnauthorizedException("Invalid Google token");
+            throw new UnauthorizedException("GOOGLE_401");
         }
     }
+
 
 }
