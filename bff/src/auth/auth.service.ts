@@ -82,49 +82,69 @@ export class AuthService {
     // GOOGLE LOGIN
     // ======================
     async googleLogin(idToken: string) {
-        const ticket = await this.googleClient.verifyIdToken({
-            idToken,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
+        try {
+            console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
 
-        const payload = ticket.getPayload();
-        if (!payload || !payload.email) {
-            throw new UnauthorizedException("Google login did not return an email");
-        }
-
-        const email = payload.email;
-        const name = payload.name ?? "Google User";
-        const googleUserId = payload.sub;
-
-        let user = await this.prisma.user.findUnique({
-            where: { email },
-        });
-
-        if (!user) {
-            user = await this.prisma.user.create({
-                data: {
-                    email,
-                    name,
-                    passwordhash: null,
-                    provider: 'GOOGLE',
-                    providerId: googleUserId,
-                },
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
             });
+
+            console.log("🔥 GOOGLE LOGIN: Token verified successfully");
+
+            const payload = ticket.getPayload();
+            console.log("🔥 GOOGLE LOGIN PAYLOAD:", payload);
+
+            if (!payload || !payload.email) {
+                console.error("❌ Google payload missing email");
+                throw new UnauthorizedException("Google login did not return an email");
+            }
+
+            const email = payload.email;
+            const name = payload.name ?? "Google User";
+            const googleUserId = payload.sub;
+
+            let user = await this.prisma.user.findUnique({
+                where: { email },
+            });
+
+            if (!user) {
+                console.log("🔥 GOOGLE LOGIN: Creating new user");
+
+                user = await this.prisma.user.create({
+                    data: {
+                        email,
+                        name,
+                        passwordhash: null,
+                        provider: 'GOOGLE',
+                        providerId: googleUserId,
+                    },
+                });
+            } else {
+                console.log("🔥 GOOGLE LOGIN: User already exists, logging in");
+            }
+
+            const accessToken = this.jwtService.sign(
+                { userId: user.id },
+                { expiresIn: '15m' }
+            );
+
+            const refreshToken = this.jwtService.sign(
+                { userId: user.id },
+                { expiresIn: '30d' }
+            );
+
+            console.log("🔥 GOOGLE LOGIN: Tokens generated");
+
+            return {
+                accessToken,
+                refreshToken,
+            };
+
+        } catch (e) {
+            console.error("❌ GOOGLE LOGIN ERROR:", e);
+            throw new UnauthorizedException("Invalid Google token");
         }
-
-        const accessToken = this.jwtService.sign(
-            { userId: user.id },
-            { expiresIn: '15m' }
-        );
-
-        const refreshToken = this.jwtService.sign(
-            { userId: user.id },
-            { expiresIn: '30d' }
-        );
-
-        return {
-            accessToken,
-            refreshToken,
-        };
     }
+
 }
