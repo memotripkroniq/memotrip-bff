@@ -7,7 +7,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
-import { OAuth2Client } from 'google-auth-library';
+
+// 🔥 DŮLEŽITÉ – musíš importovat LoginTicket
+import { OAuth2Client, LoginTicket } from 'google-auth-library';
+
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -19,6 +22,8 @@ export class AuthService {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
     ) {
+        // Tady necháváme původní web client ID,
+        // audience můžeme override přímo v verifyIdToken
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
 
@@ -85,9 +90,13 @@ export class AuthService {
         try {
             console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
 
-            const ticket = await this.googleClient.verifyIdToken({
+            // ⭐ ZDE JE OPRAVENÉ AUDIENCE (Android + Web)
+            const ticket: LoginTicket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: process.env.GOOGLE_CLIENT_ID,
+                audience: [
+                    process.env.GOOGLE_ANDROID_CLIENT_ID!,
+                    process.env.GOOGLE_CLIENT_ID!,
+                ],
             });
 
             console.log("🔥 GOOGLE LOGIN: Token verified successfully");
