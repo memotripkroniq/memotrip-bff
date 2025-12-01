@@ -103,24 +103,28 @@ export class AuthService {
 
             console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
 
-            // =====================
-            // VERIFY TOKEN
-            // =====================
-            // =====================
+            // ======================
 // VERIFY TOKEN
-// =====================
-
-// @ts-ignore – Google Auth má špatné typy, runtime OK
+// ======================
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                // @ts-ignore
-                audience: audienceList,
+                audience: undefined, // vypnuto pro debug
             });
 
-            console.log("✅ GOOGLE LOGIN: Token verified — raw ticket:", ticket);
+            console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
 
-// @ts-ignore – getPayload existuje, jen typově chybí
+// payload získáme TADY
+// @ts-ignore — Google Auth má špatné typy
             const payload = ticket.getPayload();
+
+            console.log("🔍 PAYLOAD AZP:", payload?.azp);
+            console.log("🔍 PAYLOAD AUD:", payload?.aud);
+            console.log(
+                "🔍 EXPECTED:",
+                process.env.GOOGLE_ANDROID_CLIENT_ID,
+                process.env.GOOGLE_CLIENT_ID
+            );
+
             console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
 
 
