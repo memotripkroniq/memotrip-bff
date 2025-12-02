@@ -75,6 +75,19 @@ export class AuthService {
         return { access_token: token };
     }
 
+    // ============================
+    // CHECK EMAIL input v logine
+    // ============================
+    async checkEmail(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true }
+        });
+
+        return { exists: !!user };
+    }
+
+
     // ======================
     // JWT TOKEN
     // ======================
@@ -104,8 +117,8 @@ export class AuthService {
             console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
 
             // ======================
-// VERIFY TOKEN
-// ======================
+            // VERIFY TOKEN
+            // ======================
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
                 audience: undefined, // vypnuto pro debug
@@ -113,8 +126,8 @@ export class AuthService {
 
             console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
 
-// payload získáme TADY
-// @ts-ignore — Google Auth má špatné typy
+            // payload získáme TADY
+            // @ts-ignore — Google Auth má špatné typy
             const payload = ticket.getPayload();
 
             console.log("🔍 PAYLOAD AZP:", payload?.azp);

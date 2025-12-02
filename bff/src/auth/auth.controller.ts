@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {Body, Controller, Get, NotFoundException, Post, Query} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -22,5 +22,15 @@ export class AuthController {
         return this.authService.googleLogin(idToken);
     }
 
+    @Get("check-email")
+    async checkEmail(@Query("email") email: string) {
+        const result = await this.authService.checkEmail(email);
+
+        if (!result.exists) {
+            throw new NotFoundException("EMAIL_NOT_FOUND");
+        }
+
+        return { ok: true };
+    }
 
 }
