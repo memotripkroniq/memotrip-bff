@@ -57,16 +57,30 @@ export class AuthService {
     // LOGIN
     // ======================
     async login(email: string, password: string) {
-        const user = await this.usersService.validateUser(email, password);
+        const cleanEmail = email.trim().toLowerCase();
 
+        // 1) Najdu uživatele
+        const user = await this.prisma.user.findUnique({
+            where: { email: cleanEmail }
+        });
+
+        // 2) Email neexistuje
         if (!user) {
-            const exists = await this.usersService.findUserByEmail(email);
-            if (exists && !exists.passwordhash) {
-                throw new UnauthorizedException("NO_PASSWORD_USE_GOOGLE");
-            }
+            throw new UnauthorizedException("EMAIL_NOT_FOUND");
+        }
+
+        // 3) Uživatelský účet nemá heslo (třeba Google-only účet)
+        if (!user.passwordhash) {
+            throw new UnauthorizedException("NO_PASSWORD_USE_GOOGLE");
+        }
+
+        // 4) Heslo je špatně
+        const isValid = await bcrypt.compare(password, user.passwordhash);
+        if (!isValid) {
             throw new UnauthorizedException("WRONG_PASSWORD");
         }
 
+        // 5) OK – generujeme token
         const token = this.jwtService.sign({
             sub: user.id,
             email: user.email
@@ -74,6 +88,7 @@ export class AuthService {
 
         return { access_token: token };
     }
+
 
     // ============================
     // CHECK EMAIL input v logine
