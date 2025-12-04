@@ -66,18 +66,27 @@ export class AuthService {
 
         // 2) Email neexistuje
         if (!user) {
-            throw new UnauthorizedException("EMAIL_NOT_FOUND");
+            throw new UnauthorizedException({
+                error: "EMAIL_NOT_FOUND",
+                message: "You must be registered"
+            });
         }
 
-        // 3) Uživatelský účet nemá heslo (třeba Google-only účet)
+        // 3) Google-only účet (bez hesla)
         if (!user.passwordhash) {
-            throw new UnauthorizedException("NO_PASSWORD_USE_GOOGLE");
+            throw new UnauthorizedException({
+                error: "NO_PASSWORD_USE_GOOGLE",
+                message: "This account uses Google login"
+            });
         }
 
         // 4) Heslo je špatně
         const isValid = await bcrypt.compare(password, user.passwordhash);
         if (!isValid) {
-            throw new UnauthorizedException("WRONG_PASSWORD");
+            throw new UnauthorizedException({
+                error: "WRONG_PASSWORD",
+                message: "Incorrect password"
+            });
         }
 
         // 5) OK – generujeme token
@@ -87,19 +96,6 @@ export class AuthService {
         });
 
         return { access_token: token };
-    }
-
-
-    // ============================
-    // CHECK EMAIL input v logine
-    // ============================
-    async checkEmail(email: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-            select: { id: true }
-        });
-
-        return { exists: !!user };
     }
 
 

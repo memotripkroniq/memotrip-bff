@@ -22,15 +22,4 @@ export class AuthController {
         return this.authService.googleLogin(idToken);
     }
 
-    @Get("check-email")
-    async checkEmail(@Query("email") email: string) {
-        const result = await this.authService.checkEmail(email);
-
-        if (!result.exists) {
-            throw new NotFoundException("EMAIL_NOT_FOUND");
-        }
-
-        return { ok: true };
-    }
-
 }
