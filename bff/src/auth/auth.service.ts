@@ -202,12 +202,12 @@ export class AuthService {
             // GENERATE TOKENS
             // =====================
             const accessToken = this.jwtService.sign(
-                { userId: user.id },
+                { sub: user.id },
                 { expiresIn: "15m" }
             );
 
             const refreshToken = this.jwtService.sign(
-                { userId: user.id },
+                { sub: user.id },
                 { expiresIn: "30d" }
             );
 
