@@ -65,8 +65,8 @@ model User {
   country          String         @default("EN") @db.VarChar(255)
   provider         String?        @db.VarChar(50)
   providerId       String?        @db.VarChar(255)
-  isPremiumMonthly Boolean?       @default(false)
-  ispremiumyearly  Boolean?       @default(false)
+  isPremium        Boolean        @default(false)
+  isKroniq         Boolean        @default(false)
   createdat        DateTime       @default(now()) @db.Timestamp(6)
   GroupMembers     GroupMembers[]
   Groups           Groups[]
