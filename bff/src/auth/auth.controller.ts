@@ -1,7 +1,9 @@
-import {Body, Controller, Get, NotFoundException, Post, Query} from '@nestjs/common';
+import {Body, Controller, Get, Post, Req, UseGuards, Query} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +23,13 @@ export class AuthController {
     async google(@Body('idToken') idToken: string) {
         return this.authService.googleLogin(idToken);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('me')
+    async me(@Req() req: any) {
+        const userId = req.user.sub; // z JWT payloadu
+        return this.authService.getMe(userId);
+    }
+
 
 }
