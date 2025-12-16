@@ -221,5 +221,28 @@ export class AuthService {
         }
     }
 
+    // ======================
+    // GET ME (CURRENT USER)
+    // ======================
+    async getMe(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                isPremiumMonthly: true,
+                ispremiumyearly: true,
+            },
+        });
+
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        return user;
+    }
+
+
 
 }
