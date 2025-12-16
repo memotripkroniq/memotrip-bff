@@ -58,22 +58,22 @@ model Payment {
 }
 
 model User {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String         @unique @db.VarChar(255)
-  passwordhash     String?        @db.VarChar(255)
-  name             String?        @db.VarChar(255)
-  country          String         @default("EN") @db.VarChar(255)
-  provider         String?        @db.VarChar(50)
-  providerId       String?        @db.VarChar(255)
-  isPremiumMonthly Boolean?       @default(false)
-  ispremiumyearly  Boolean?       @default(false)
-  createdat        DateTime       @default(now()) @db.Timestamp(6)
-  GroupMembers     GroupMembers[]
-  Groups           Groups[]
-  Notification     Notification[]
-  Order            Order[]
-  TripShares       TripShares[]
-  Trips            Trips[]
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  passwordhash String?        @db.VarChar(255)
+  name         String?        @db.VarChar(255)
+  country      String         @default("EN") @db.VarChar(255)
+  isPremium    Boolean        @default(false)
+  isKroniq     Boolean        @default(false)
+  createdAt    DateTime       @default(now()) @db.Timestamp(6)
+  provider     String?        @db.VarChar(50)
+  providerId   String?        @db.VarChar(255)
+  GroupMembers GroupMembers[]
+  Groups       Groups[]
+  Notification Notification[]
+  Order        Order[]
+  TripShares   TripShares[]
+  Trips        Trips[]
 }
 
 model GroupMembers {

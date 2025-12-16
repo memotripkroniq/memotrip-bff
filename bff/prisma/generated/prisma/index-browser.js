@@ -168,11 +168,11 @@ exports.Prisma.UserScalarFieldEnum = {
   passwordhash: 'passwordhash',
   name: 'name',
   country: 'country',
+  isPremium: 'isPremium',
+  isKroniq: 'isKroniq',
+  createdAt: 'createdAt',
   provider: 'provider',
-  providerId: 'providerId',
-  isPremiumMonthly: 'isPremiumMonthly',
-  ispremiumyearly: 'ispremiumyearly',
-  createdat: 'createdat'
+  providerId: 'providerId'
 };
 
 exports.Prisma.GroupMembersScalarFieldEnum = {

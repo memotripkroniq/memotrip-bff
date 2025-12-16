@@ -231,8 +231,8 @@ export class AuthService {
                 id: true,
                 email: true,
                 name: true,
-                isPremiumMonthly: true,
-                ispremiumyearly: true,
+                isPremium: true,
+                isKroniq: true,
             },
         });
 
