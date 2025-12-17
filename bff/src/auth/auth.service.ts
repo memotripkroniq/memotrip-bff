@@ -225,6 +225,8 @@ export class AuthService {
     // GET ME (CURRENT USER)
     // ======================
     async getMe(userId: string) {
+        console.log('🔍 GET ME userId:', userId);
+        
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -236,11 +238,19 @@ export class AuthService {
             },
         });
 
+        console.log('👤 USER FROM DB:', user);
+
         if (!user) {
             throw new UnauthorizedException('User not found');
         }
 
-        return user;
+        return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isPremium: user.isPremium,
+            isKroniq: user.isKroniq,
+        };
     }
 
 
