@@ -1,20 +1,13 @@
 ﻿import { Inject, Injectable } from "@nestjs/common";
 import OpenAI from "openai";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
+import { uploadTripMap } from "../storage/r2-upload";
 
 @Injectable()
 export class TripMapService {
-    constructor(@Inject("OPENAI") private readonly openai: OpenAI) {
-        console.log("OPENAI MODEL:", process.env.OPENAI_MODEL);
-        console.log(
-            "OPENAI KEY PRESENT:",
-            !!process.env.OPENAI_API_KEY
-        );
-    }
+    constructor(@Inject("OPENAI") private readonly openai: OpenAI) {}
 
-    async generateTripMap(
-        dto: GenerateTripMapDto
-    ): Promise<{ imageBase64: string }> {
+    async generateTripMap(dto: GenerateTripMapDto): Promise<{ imageUrl: string }> {
 
         const prompt = this.buildPrompt(dto);
 
@@ -25,26 +18,20 @@ export class TripMapService {
             tool_choice: { type: "image_generation" },
         });
 
-        const output = response.output?.[0];
-
-        if (
-            !output ||
-            !("content" in output) ||
-            !Array.isArray((output as any).content)
-        ) {
-            throw new Error("Invalid OpenAI response structure");
-        }
-
-        const imageBase64 = (output as any).content.find(
-            (c: any) => c.type === "output_image"
-        )?.image_base64;
+        const imageBase64 = response.output
+            ?.flatMap((item: any) => item.content ?? [])
+            .find((c: any) => c.type === "output_image")
+            ?.image_base64;
 
 
         if (!imageBase64) {
             throw new Error("OpenAI did not return image data");
         }
 
-        return { imageBase64 };
+        // 🔥 ULOŽENÍ DO R2
+        const imageUrl = await uploadTripMap(imageBase64);
+
+        return { imageUrl };
     }
 
     private buildPrompt(dto: GenerateTripMapDto) {

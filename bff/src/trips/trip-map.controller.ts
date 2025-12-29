@@ -8,10 +8,6 @@ export class TripMapController {
 
     @Post("generate-map")
     async generate(@Body() dto: GenerateTripMapDto) {
-        const { imageBase64 } = await this.tripMapService.generateTripMap(dto);
-
-        // DOČASNĚ: vrátíme base64 (jen pro ověření end-to-end)
-        // produkčně: uložíš do storage a vrátíš imageUrl
-        return { imageBase64 };
+        return this.tripMapService.generateTripMap(dto);
     }
 }
