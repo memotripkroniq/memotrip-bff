@@ -12,7 +12,7 @@ export class TripMapService {
         const prompt = this.buildPrompt(dto);
 
         const response = await this.openai.responses.create({
-            model: process.env.OPENAI_MODEL ?? "gpt-5",
+            model: "gpt-image-1",
             input: prompt,
             tools: [{ type: "image_generation" }],
             tool_choice: { type: "image_generation" },
