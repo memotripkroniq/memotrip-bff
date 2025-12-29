@@ -8,45 +8,47 @@ export class TripMapService {
     constructor(@Inject("OPENAI") private readonly openai: OpenAI) {}
 
     async generateTripMap(dto: GenerateTripMapDto): Promise<{ imageUrl: string }> {
-
         const prompt = this.buildPrompt(dto);
 
-        const response = await this.openai.responses.create({
-            model: "gpt-image-1",
-            input: prompt,
-            tools: [{ type: "image_generation" }],
-            tool_choice: { type: "image_generation" },
+        // ✅ Images API (správně)
+        const img = await this.openai.images.generate({
+            model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1",
+            prompt,
+            size: "1024x1024", // ✅ POVOLENÁ HODNOTA
         });
 
-        const imageBase64 = response.output
-            ?.flatMap((item: any) => item.content ?? [])
-            .find((c: any) => c.type === "output_image")
-            ?.image_base64;
-
+        const imageBase64 = img.data?.[0]?.b64_json;
 
         if (!imageBase64) {
             throw new Error("OpenAI did not return image data");
         }
 
-        // 🔥 ULOŽENÍ DO R2
+        // 🔥 upload do Cloudflare R2
         const imageUrl = await uploadTripMap(imageBase64);
 
         return { imageUrl };
     }
 
     private buildPrompt(dto: GenerateTripMapDto) {
-        const transports = dto.transports.join(", ");
-
         return `
-Draw a clean minimalist "route map" banner illustration (like a travel app header).
+Draw a clean minimalist route map illustration for a travel app header.
+
+Route:
 - From: "${dto.from}"
 - To: "${dto.to}"
-- Transport modes: ${transports}
+- Transport modes: ${dto.transports.join(", ")}
+
 Style:
-- dark background, neon route line, subtle map grid
-- include start/end pins + a simple route line
-- no extra text, no watermark
-Output: 1024x512 PNG
-`.trim();
+- dark background
+- neon route line
+- subtle map grid
+- start & end pins
+- no text, no watermark
+
+Format:
+- flat illustration
+- centered composition
+    `.trim();
     }
 }
+
