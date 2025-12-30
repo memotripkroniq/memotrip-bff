@@ -3,6 +3,7 @@ import { TripMapController } from "./trip-map.controller";
 import { TripMapService } from "./trip-map.service";
 import { OpenAIModule } from "../openai/openai.module";
 import { OsmGeocodingService } from "../locations/osm-geocoding.service";
+import { OsrmRoutingService } from "./osrm-routing.service";
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import { OsmGeocodingService } from "../locations/osm-geocoding.service";
     ],
     providers: [
         TripMapService,
-        OsmGeocodingService, // 🟢 KROK 3 – OSM geocoding
+        OsmGeocodingService,
+        OsrmRoutingService,
     ],
 })
 export class TripsModule {}
