@@ -8,7 +8,13 @@ import type { LineString } from "geojson";
 export class MapRenderService {
     async renderToPng(route: LineString): Promise<Buffer> {
         // 1️⃣ Načti HTML šablonu
-        const templatePath = join(__dirname, "map-template.html");
+        const templatePath = join(
+            process.cwd(),
+            "src",
+            "trips",
+            "map-template.html"
+        );
+
         let html = await readFile(templatePath, "utf-8");
 
         // 2️⃣ Vlož reálná OSRM data (JSON → string)
