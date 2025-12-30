@@ -2,11 +2,14 @@
 import { TripMapService } from "./trip-map.service";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
 import { RenderTripMapDto } from "./dto/render-trip-map.dto";
+import { OsmGeocodingService } from "../locations/osm-geocoding.service";
+
 
 @Controller("trips")
 export class TripMapController {
     constructor(
-        private readonly tripMapService: TripMapService
+        private readonly tripMapService: TripMapService,
+        private readonly geocoding: OsmGeocodingService
     ) {}
 
     /**
@@ -26,21 +29,13 @@ export class TripMapController {
      * Připravený pro OSM render mapy
      */
     @Post("render-map")
-    async renderMap(
-        @Body() dto: GenerateTripMapDto
-    ) {
-        // 🔧 ZATÍM DUMMY SOUŘADNICE
-        // (v dalším kroku nahradíme OSM geocodingem)
+    async renderMap(@Body() dto: GenerateTripMapDto) {
+        const from = await this.geocoding.geocode(dto.from);
+        const to = await this.geocoding.geocode(dto.to);
+
         const renderDto: RenderTripMapDto = {
-            from: {
-                lat: 48.1486,   // Bratislava
-                lon: 17.1077,
-            },
-            to: {
-                lat: 41.3851,   // Barcelona
-                lon: 2.1734,
-            },
-            // vezmeme první zvolený transport
+            from,
+            to,
             transport: dto.transports[0],
         };
 
