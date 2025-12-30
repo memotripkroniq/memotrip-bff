@@ -2,6 +2,9 @@
 import OpenAI from "openai";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
 import { uploadTripMap } from "../storage/r2-upload";
+import { RenderTripMapDto } from "./dto/render-trip-map.dto";
+import { randomUUID } from "crypto";
+
 
 @Injectable()
 export class TripMapService {
@@ -76,4 +79,21 @@ Output:
 - centered composition
         `.trim();
     }
+
+    async renderTripMap(
+        dto: RenderTripMapDto
+    ): Promise<{ imageUrl: string }> {
+
+        // 🔧 zatím testovací 1x1 PNG
+        const base64Png =
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6X8mS8AAAAASUVORK5CYII=";
+
+        const fileName = `maps/trip_${randomUUID()}.png`;
+        const imageUrl = await uploadTripMap(base64Png);
+        //const imageUrl = await uploadTripMap(base64Png, fileName);
+
+        return { imageUrl };
+    }
 }
+
+
