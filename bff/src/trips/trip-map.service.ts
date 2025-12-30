@@ -1,54 +1,79 @@
-﻿import { Inject, Injectable } from "@nestjs/common";
+﻿import { Inject, Injectable, Logger } from "@nestjs/common";
 import OpenAI from "openai";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
 import { uploadTripMap } from "../storage/r2-upload";
 
 @Injectable()
 export class TripMapService {
-    constructor(@Inject("OPENAI") private readonly openai: OpenAI) {}
+    private readonly logger = new Logger(TripMapService.name);
 
-    async generateTripMap(dto: GenerateTripMapDto): Promise<{ imageUrl: string }> {
+    constructor(
+        @Inject("OPENAI")
+        private readonly openai: OpenAI
+    ) {}
+
+    async generateTripMap(
+        dto: GenerateTripMapDto
+    ): Promise<{ imageUrl: string }> {
+
         const prompt = this.buildPrompt(dto);
 
-        // ✅ Images API (správně)
-        const img = await this.openai.images.generate({
-            model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1",
-            prompt,
-            size: "1024x1024", // ✅ POVOLENÁ HODNOTA
-        });
+        try {
+            // ✅ Images API – JEDINÁ SPRÁVNÁ CESTA PRO OBRÁZKY
+            const img = await this.openai.images.generate({
+                model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1",
+                prompt,
+                size: "1024x1024", // ⛔ jiné rozměry NEJSOU povolené
+            });
 
-        const imageBase64 = img.data?.[0]?.b64_json;
+            const imageBase64 = img.data?.[0]?.b64_json;
 
-        if (!imageBase64) {
-            throw new Error("OpenAI did not return image data");
+            if (!imageBase64) {
+                this.logger.error("OpenAI returned no image data", img);
+                throw new Error("OpenAI did not return image data");
+            }
+
+            // 🔥 Upload do Cloudflare R2 → vrací VEŘEJNÉ URL
+            const imageUrl = await uploadTripMap(imageBase64);
+
+            return { imageUrl };
+
+        } catch (err: any) {
+            this.logger.error(
+                "Trip map generation failed",
+                err?.message ?? err
+            );
+
+            // přepošleme čitelnou chybu ven
+            throw err;
         }
-
-        // 🔥 upload do Cloudflare R2
-        const imageUrl = await uploadTripMap(imageBase64);
-
-        return { imageUrl };
     }
 
-    private buildPrompt(dto: GenerateTripMapDto) {
+    private buildPrompt(dto: GenerateTripMapDto): string {
         return `
-Draw a clean minimalist route map illustration for a travel app header.
+Draw a clean, minimalist route map illustration for a travel app header.
 
 Route:
 - From: "${dto.from}"
 - To: "${dto.to}"
 - Transport modes: ${dto.transports.join(", ")}
 
-Style:
+Visual style:
 - dark background
-- neon route line
+- glowing neon route line
 - subtle map grid
-- start & end pins
-- no text, no watermark
+- simple start & end location pins
+- flat, modern UI illustration
 
-Format:
+Rules:
+- no text
+- no labels
+- no watermark
+- no logos
+
+Output:
 - flat illustration
 - centered composition
-    `.trim();
+        `.trim();
     }
 }
-
