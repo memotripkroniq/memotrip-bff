@@ -36,20 +36,14 @@ export class TripMapController {
 
         const route = await this.osrm.route(from, to);
 
-        // 🔍 zatím jen ověření – klidně si dej logger
-        console.log("OSRM route:", {
-            distanceKm: Math.round(route.distance / 1000),
-            durationMin: Math.round(route.duration / 60),
-            points: route.geometry.coordinates.length,
-        });
-
         const renderDto: RenderTripMapDto = {
             from,
             to,
             transport: dto.transports[0],
         };
 
-        return this.tripMapService.renderTripMap(renderDto);
+        return this.tripMapService.renderTripMap(renderDto, route.geometry);
     }
+
 
 }

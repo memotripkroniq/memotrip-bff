@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trip Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+            crossorigin=""
+    />
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #0b0f1a;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* jemný tmavý overlay – vypadá hezky v PNG */
+        .leaflet-tile {
+            filter: brightness(0.9) contrast(1.1) saturate(1.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+></script>
+
+<script>
+    // ⬇⬇⬇ TADY SE DYNAMICKY DOSADÍ OSRM GEOJSON ⬇⬇⬇
+    const routeGeoJson = __ROUTE_GEOJSON__;
+
+    // Leaflet chce [lat, lon]
+    const latLngs = routeGeoJson.coordinates.map(c => [c[1], c[0]]);
+
+    const start = latLngs[0];
+    const end   = latLngs[latLngs.length - 1];
+
+    const map = L.map("map", {
+        zoomControl: false,
+        attributionControl: false
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+    }).addTo(map);
+
+    const routeLayer = L.polyline(latLngs, {
+        color: "#4da3ff",
+        weight: 5,
+        opacity: 0.95
+    }).addTo(map);
+
+    L.circleMarker(start, {
+        radius: 7,
+        color: "#2ecc71",
+        fillColor: "#2ecc71",
+        fillOpacity: 1
+    }).addTo(map);
+
+    L.circleMarker(end, {
+        radius: 7,
+        color: "#e74c3c",
+        fillColor: "#e74c3c",
+        fillOpacity: 1
+    }).addTo(map);
+
+    map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+</script>
+
+
+</body>
+</html>

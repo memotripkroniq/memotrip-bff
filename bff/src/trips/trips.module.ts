@@ -4,6 +4,7 @@ import { TripMapService } from "./trip-map.service";
 import { OpenAIModule } from "../openai/openai.module";
 import { OsmGeocodingService } from "../locations/osm-geocoding.service";
 import { OsrmRoutingService } from "./osrm-routing.service";
+import { MapRenderService } from "./map-render.service";
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { OsrmRoutingService } from "./osrm-routing.service";
         TripMapService,
         OsmGeocodingService,
         OsrmRoutingService,
+        MapRenderService,
     ],
 })
 export class TripsModule {}

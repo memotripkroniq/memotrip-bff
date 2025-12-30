@@ -4,6 +4,7 @@ import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
 import { uploadTripMap } from "../storage/r2-upload";
 import { RenderTripMapDto } from "./dto/render-trip-map.dto";
 import { randomUUID } from "crypto";
+import {MapRenderService} from "./map-render.service";
 
 
 @Injectable()
@@ -12,7 +13,8 @@ export class TripMapService {
 
     constructor(
         @Inject("OPENAI")
-        private readonly openai: OpenAI
+        private readonly openai: OpenAI,
+        private readonly mapRender: MapRenderService
     ) {}
 
     async generateTripMap(
@@ -81,16 +83,16 @@ Output:
     }
 
     async renderTripMap(
-        dto: RenderTripMapDto
+        dto: RenderTripMapDto,
+        route: import("geojson").LineString
     ): Promise<{ imageUrl: string }> {
 
-        // 🔧 zatím testovací 1x1 PNG
-        const base64Png =
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6X8mS8AAAAASUVORK5CYII=";
+        // 🖼️ Render mapy do PNG
+        const pngBuffer = await this.mapRender.renderToPng(route);
 
-        const fileName = `maps/trip_${randomUUID()}.png`;
-        const imageUrl = await uploadTripMap(base64Png);
-        //const imageUrl = await uploadTripMap(base64Png, fileName);
+        // 🔥 Upload do R2
+        const imageBase64 = pngBuffer.toString("base64");
+        const imageUrl = await uploadTripMap(imageBase64);
 
         return { imageUrl };
     }
