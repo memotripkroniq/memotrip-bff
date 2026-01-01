@@ -45,12 +45,9 @@
 ></script>
 
 <script>
-    // ⬇⬇⬇ TADY SE DYNAMICKY DOSADÍ OSRM GEOJSON ⬇⬇⬇
     const routeGeoJson = __ROUTE_GEOJSON__;
 
-    // Leaflet chce [lat, lon]
     const latLngs = routeGeoJson.coordinates.map(c => [c[1], c[0]]);
-
     const start = latLngs[0];
     const end   = latLngs[latLngs.length - 1];
 
@@ -83,9 +80,15 @@
         fillOpacity: 1
     }).addTo(map);
 
-    map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+    // 🔥 KLÍČOVÁ ČÁST
+    const bounds = routeLayer.getBounds();
+
+    // procentuální rozšíření bounds (reálná mapa navíc)
+    const paddedBounds = bounds.pad(0.25); // 25 % okolo trasy
+
+    map.fitBounds(paddedBounds, {
+        animate: false
+    });
 </script>
-
-
 </body>
 </html>

@@ -18,11 +18,10 @@ export class MapRenderService {
         let html = await readFile(templatePath, "utf-8");
 
         // 2️⃣ Vlož reálná OSRM data (JSON → string)
-        html = html.replace(
-            "__ROUTE_GEOJSON__",
-            JSON.stringify(route)
-        );
-
+        html = html
+            .replace("__ROUTE_GEOJSON__", JSON.stringify(route))
+            .replace("__MAP_PADDING__", "0.2"); // 20 % padding
+        
         // 3️⃣ Spusť Playwright (headless)
         const browser = await chromium.launch({
             headless: true,
@@ -30,8 +29,8 @@ export class MapRenderService {
         });
 
         const page = await browser.newPage({
-            viewport: { width: 1200, height: 800 },
-            deviceScaleFactor: 2, // hezčí PNG
+            viewport: { width: 1600, height: 900 },
+            deviceScaleFactor: 3, // hezčí PNG
         });
 
         // 4️⃣ Nahraj HTML přímo z paměti
@@ -41,7 +40,10 @@ export class MapRenderService {
         await page.waitForTimeout(1500);
 
         // 6️⃣ Screenshot celé stránky
-        const buffer = await page.screenshot({ type: "png" });
+        const buffer = await page.screenshot({
+            type: "png",
+            fullPage: false
+        });
 
         await browser.close();
         return buffer;
