@@ -84,7 +84,7 @@
     const bounds = routeLayer.getBounds();
 
     // procentuální rozšíření bounds (reálná mapa navíc)
-    const paddedBounds = bounds.pad(0.25); // 25 % okolo trasy
+    const paddedBounds = bounds.pad(0.16); // 16 % okolo trasy
 
     map.fitBounds(paddedBounds, {
         animate: false
