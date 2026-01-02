@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Trip Map</title>
+    <title>MemoTrip – Trip Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Leaflet CSS -->
     <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
             crossorigin=""
     />
 
@@ -18,82 +19,103 @@
             padding: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
             background: #0b0f1a;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         #map {
+            position: relative;
             width: 100%;
             height: 100%;
         }
 
-        /* jemné sjednocení barev – NEztmavuje */
+        /* 🌍 zesvětlený, přirozený mapový look */
         .leaflet-tile {
-            filter: contrast(1.03) saturate(1.05);
+            filter:
+                    brightness(1.06)
+                    contrast(1.04)
+                    saturate(1.05);
         }
 
-        /* jemná viněta (MemoTrip look) */
-        .vignette {
-            pointer-events: none;
+        /* 🧭 jemný vignette – jen atmosféra */
+        #map::after {
+            content: "";
             position: absolute;
             inset: 0;
-            box-shadow: inset 0 0 120px rgba(0,0,0,0.35);
-            z-index: 999;
+            pointer-events: none;
+            background: radial-gradient(
+                    ellipse at center,
+                    rgba(0,0,0,0) 60%,
+                    rgba(0,0,0,0.22) 100%
+            );
+            z-index: 500;
         }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div class="vignette"></div>
 
 <!-- Leaflet JS -->
 <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""
 ></script>
 
 <script>
+    // ⬇⬇⬇ GeoJSON dosazený backendem ⬇⬇⬇
     const routeGeoJson = __ROUTE_GEOJSON__;
 
+    // Leaflet chce [lat, lon]
     const latLngs = routeGeoJson.coordinates.map(c => [c[1], c[0]]);
+
     const start = latLngs[0];
     const end   = latLngs[latLngs.length - 1];
 
     const map = L.map("map", {
         zoomControl: false,
         attributionControl: false,
-        preferCanvas: true
+        inertia: false,
+        fadeAnimation: false
     });
 
-    L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { maxZoom: 18 }
-    ).addTo(map);
-
-    const routeLayer = L.polyline(latLngs, {
-        color: "#4DA3FF",
-        weight: 6,
-        opacity: 0.95,
-        lineJoin: "round",
-        lineCap: "round"
+    // 🌍 Základní OSM mapa
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18
     }).addTo(map);
 
+    // 🧵 Trasa
+    const routeLayer = L.polyline(latLngs, {
+        color: "#4da3ff",
+        weight: 5,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round"
+    }).addTo(map);
+
+    // 🟢 Start
     L.circleMarker(start, {
-        radius: 8,
+        radius: 7,
         color: "#2ecc71",
         fillColor: "#2ecc71",
         fillOpacity: 1
     }).addTo(map);
 
+    // 🔴 Cíl
     L.circleMarker(end, {
-        radius: 8,
+        radius: 7,
         color: "#e74c3c",
         fillColor: "#e74c3c",
         fillOpacity: 1
     }).addTo(map);
 
+    // 📐 framing trasy
     const bounds = routeLayer.getBounds();
-    const paddedBounds = bounds.pad(0.18); // ideální kompromis
+
+    // 🔥 kolik mapy navíc kolem trasy
+    const paddedBounds = bounds.pad(0.16);
 
     map.fitBounds(paddedBounds, {
         animate: false
