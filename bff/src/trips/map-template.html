@@ -9,7 +9,6 @@
     <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
             crossorigin=""
     />
 
@@ -19,7 +18,7 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background: #0b0f1a;
+            background: #101318;
             overflow: hidden;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         }
@@ -29,15 +28,15 @@
             height: 100%;
         }
 
-        /* 🔆 ZESVĚTLENÍ PODKLADU (hlavní změna) */
+        /* 🌍 SVĚTLEJŠÍ, ČITELNÁ MAPA */
         .leaflet-tile {
             filter:
-                    brightness(1.05)
-                    contrast(1.05)
-                    saturate(1.15);
+                    brightness(1.08)
+                    contrast(1.02)
+                    saturate(1.08);
         }
 
-        /* 🖤 jemná viněta – už neničí rohy */
+        /* jemná viněta – už jen kosmetika */
         #map::after {
             content: "";
             position: absolute;
@@ -45,8 +44,8 @@
             pointer-events: none;
             background: radial-gradient(
                     ellipse at center,
-                    rgba(0,0,0,0) 60%,
-                    rgba(0,0,0,0.25) 100%
+                    rgba(0,0,0,0) 65%,
+                    rgba(0,0,0,0.18) 100%
             );
             z-index: 500;
         }
@@ -56,81 +55,72 @@
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""
 ></script>
 
 <script>
-    // ⬇ backend dosadí GeoJSON
     const routeGeoJson = __ROUTE_GEOJSON__;
 
     const latLngs = routeGeoJson.coordinates.map(c => [c[1], c[0]]);
-
     const start = latLngs[0];
     const end   = latLngs[latLngs.length - 1];
 
     const map = L.map("map", {
         zoomControl: false,
         attributionControl: false,
-        inertia: false,
-        fadeAnimation: false
+        fadeAnimation: false,
+        inertia: false
     });
 
-    // 🌍 Dark tiles, ale zesvětlené přes CSS
-    L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        { maxZoom: 19 }
-    ).addTo(map);
+    /* 🌍 SVĚTLÉ OSM TILES */
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18
+    }).addTo(map);
 
-    // ✨ glow pod trasou
+    /* ✨ glow pod trasou */
     L.polyline(latLngs, {
         color: "#4da3ff",
-        weight: 14,
-        opacity: 0.20,
+        weight: 12,
+        opacity: 0.18,
         lineCap: "round",
         lineJoin: "round"
     }).addTo(map);
 
-    // 🚗 hlavní trasa
+    /* 🚗 hlavní trasa */
     const routeLayer = L.polyline(latLngs, {
-        color: "#7fc0ff",
+        color: "#4da3ff",
         weight: 5,
         opacity: 0.95,
         lineCap: "round",
         lineJoin: "round"
     }).addTo(map);
 
-    // 🟢 START – halo pro viditelnost
+    /* 🟢 START – výrazný */
     L.circleMarker(start, {
         radius: 9,
-        color: "#2ecc71",
+        color: "#ffffff",
+        weight: 3,
         fillColor: "#2ecc71",
-        fillOpacity: 1,
-        weight: 2
+        fillOpacity: 1
     }).addTo(map);
 
-    // 🔴 END – halo
+    /* 🔴 END – výrazný */
     L.circleMarker(end, {
         radius: 9,
-        color: "#e74c3c",
+        color: "#ffffff",
+        weight: 3,
         fillColor: "#e74c3c",
-        fillOpacity: 1,
-        weight: 2
+        fillOpacity: 1
     }).addTo(map);
 
-    // 📐 framing
+    /* 📐 framing */
     const bounds = routeLayer.getBounds();
     const paddedBounds = bounds.pad(0.16);
 
     map.fitBounds(paddedBounds, { animate: false });
-
-    // 🔍 jemný zoom boost
-    map.setZoom(map.getZoom() + 1);
 </script>
-
 
 </body>
 </html>
