@@ -63,9 +63,9 @@ model User {
   passwordhash String?        @db.VarChar(255)
   name         String?        @db.VarChar(255)
   country      String         @default("EN") @db.VarChar(255)
-  isPremium    Boolean        @default(false) @map("ispremium")
-  isKroniq     Boolean        @default(false) @map("iskroniq")
-  createdAt    DateTime       @default(now()) @map("createdat") @db.Timestamp(6)
+  isPremium    Boolean        @default(false)
+  isKroniq     Boolean        @default(false)
+  createdAt    DateTime       @default(now()) @db.Timestamp(6)
   provider     String?        @db.VarChar(50)
   providerId   String?        @db.VarChar(255)
   GroupMembers GroupMembers[]
