@@ -37,7 +37,7 @@ export class MapRenderService {
         await page.setContent(html, { waitUntil: "load" });
 
         // 5️⃣ Počkej, až se načtou mapové dlaždice
-        await page.waitForTimeout(1500);
+        await page.waitForSelector(".leaflet-tile-loaded");
 
         // 6️⃣ Screenshot celé stránky
         const buffer = await page.screenshot({
