@@ -108,23 +108,20 @@ export class AuthService {
     }
 
     // ======================
-// GOOGLE LOGIN
-// ======================
+    // GOOGLE LOGIN
+    // ======================
     async googleLogin(idToken: string) {
         try {
-            if (
-                !process.env.GOOGLE_CLIENT_ID ||
-                !process.env.GOOGLE_ANDROID_CLIENT_ID
-            ) {
-                throw new Error("Missing Google OAuth client IDs");
+            const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+
+            if (!androidClientId) {
+                throw new Error("GOOGLE_ANDROID_CLIENT_ID is missing");
             }
 
+            // 🔑 Ověřujeme POUZE proti ANDROID client ID
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: [
-                    process.env.GOOGLE_CLIENT_ID,          // ✅ WEB
-                    process.env.GOOGLE_ANDROID_CLIENT_ID,  // ✅ ANDROID
-                ],
+                audience: androidClientId,
             });
 
             const payload = ticket.getPayload();
@@ -133,13 +130,10 @@ export class AuthService {
                 throw new UnauthorizedException("INVALID_GOOGLE_PAYLOAD");
             }
 
-            const email = payload.email.toLowerCase();
+            const email = payload.email;
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
 
-            // ─────────────────────
-            // USER IN DB
-            // ─────────────────────
             let user = await this.prisma.user.findUnique({
                 where: { email },
             });
@@ -156,11 +150,8 @@ export class AuthService {
                 });
             }
 
-            // ─────────────────────
-            // TOKENS
-            // ─────────────────────
             const accessToken = this.jwtService.sign(
-                { sub: user.id, email: user.email },
+                { sub: user.id },
                 { expiresIn: "15m" }
             );
 
@@ -171,11 +162,12 @@ export class AuthService {
 
             return { accessToken, refreshToken };
 
-        } catch (error) {
-            console.error("❌ GOOGLE LOGIN ERROR", error);
+        } catch (e) {
+            console.error("❌ GOOGLE LOGIN ERROR:", e);
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
+
 
 
 
