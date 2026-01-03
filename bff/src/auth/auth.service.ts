@@ -108,17 +108,23 @@ export class AuthService {
     }
 
     // ======================
-    // GOOGLE LOGIN
-    // ======================
+// GOOGLE LOGIN
+// ======================
     async googleLogin(idToken: string) {
         try {
-            if (!process.env.GOOGLE_CLIENT_ID) {
-                throw new Error("GOOGLE_CLIENT_ID is missing");
+            if (
+                !process.env.GOOGLE_CLIENT_ID ||
+                !process.env.GOOGLE_ANDROID_CLIENT_ID
+            ) {
+                throw new Error("Missing Google OAuth client IDs");
             }
 
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: process.env.GOOGLE_CLIENT_ID, // ✅ JEDINÁ SPRÁVNÁ HODNOTA
+                audience: [
+                    process.env.GOOGLE_CLIENT_ID,          // ✅ WEB
+                    process.env.GOOGLE_ANDROID_CLIENT_ID,  // ✅ ANDROID
+                ],
             });
 
             const payload = ticket.getPayload();
@@ -127,10 +133,13 @@ export class AuthService {
                 throw new UnauthorizedException("INVALID_GOOGLE_PAYLOAD");
             }
 
-            const email = payload.email;
+            const email = payload.email.toLowerCase();
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
 
+            // ─────────────────────
+            // USER IN DB
+            // ─────────────────────
             let user = await this.prisma.user.findUnique({
                 where: { email },
             });
@@ -147,8 +156,11 @@ export class AuthService {
                 });
             }
 
+            // ─────────────────────
+            // TOKENS
+            // ─────────────────────
             const accessToken = this.jwtService.sign(
-                { sub: user.id },
+                { sub: user.id, email: user.email },
                 { expiresIn: "15m" }
             );
 
@@ -159,11 +171,12 @@ export class AuthService {
 
             return { accessToken, refreshToken };
 
-        } catch (e) {
-            console.error("❌ GOOGLE LOGIN ERROR:", e);
+        } catch (error) {
+            console.error("❌ GOOGLE LOGIN ERROR", error);
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
+
 
 
     // ======================
