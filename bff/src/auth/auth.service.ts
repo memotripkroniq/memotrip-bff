@@ -112,77 +112,30 @@ export class AuthService {
     // ======================
     async googleLogin(idToken: string) {
         try {
-            console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
+            if (!process.env.GOOGLE_CLIENT_ID) {
+                throw new Error("GOOGLE_CLIENT_ID is missing");
+            }
 
-            // =====================
-            // ENV DEBUG LOGY
-            // =====================
-            console.log("🌍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
-            console.log("🤖 GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
-
-            const audienceList = [
-                process.env.GOOGLE_ANDROID_CLIENT_ID,
-                process.env.GOOGLE_CLIENT_ID,
-            ];
-
-            console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
-
-            // ======================
-            // VERIFY TOKEN
-            // ======================
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: undefined, // vypnuto pro debug
+                audience: process.env.GOOGLE_CLIENT_ID, // ✅ JEDINÁ SPRÁVNÁ HODNOTA
             });
 
-            console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
-
-            // payload získáme TADY
-            // @ts-ignore — Google Auth má špatné typy
             const payload = ticket.getPayload();
 
-            console.log("🔍 PAYLOAD AZP:", payload?.azp);
-            console.log("🔍 PAYLOAD AUD:", payload?.aud);
-            console.log(
-                "🔍 EXPECTED:",
-                process.env.GOOGLE_ANDROID_CLIENT_ID,
-                process.env.GOOGLE_CLIENT_ID
-            );
-
-            console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
-
-
-            // =====================
-            // VALIDACE
-            // =====================
-            if (!payload) {
-                console.error("❌ NO PAYLOAD RETURNED FROM GOOGLE");
-                throw new UnauthorizedException("NO_PAYLOAD");
+            if (!payload || !payload.email || !payload.sub) {
+                throw new UnauthorizedException("INVALID_GOOGLE_PAYLOAD");
             }
-
-            if (!payload.email) {
-                console.error("❌ PAYLOAD HAS NO EMAIL");
-                throw new UnauthorizedException("NO_EMAIL");
-            }
-
-            console.log("📧 EMAIL:", payload.email);
-            console.log("🆔 GOOGLE SUB:", payload.sub);
-            console.log("👤 NAME:", payload.name);
 
             const email = payload.email;
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
 
-            // =====================
-            // UŽIVATEL V DATABÁZI
-            // =====================
-            console.log("🔎 Checking if user exists in DB…");
-
-            let user = await this.prisma.user.findUnique({ where: { email } });
+            let user = await this.prisma.user.findUnique({
+                where: { email },
+            });
 
             if (!user) {
-                console.log("🆕 User not found → creating");
-
                 user = await this.prisma.user.create({
                     data: {
                         email,
@@ -192,15 +145,8 @@ export class AuthService {
                         passwordhash: null,
                     },
                 });
-            } else {
-                console.log("👋 User exists, logging in");
             }
 
-            console.log("🧪 DB User:", user);
-
-            // =====================
-            // GENERATE TOKENS
-            // =====================
             const accessToken = this.jwtService.sign(
                 { sub: user.id },
                 { expiresIn: "15m" }
@@ -211,8 +157,6 @@ export class AuthService {
                 { expiresIn: "30d" }
             );
 
-            console.log("🎫 TOKENS CREATED OK");
-
             return { accessToken, refreshToken };
 
         } catch (e) {
@@ -220,6 +164,7 @@ export class AuthService {
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
+
 
     // ======================
     // GET ME (CURRENT USER)
