@@ -112,36 +112,77 @@ export class AuthService {
     // ======================
     async googleLogin(idToken: string) {
         try {
-            const androidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID;
+            console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
 
-            if (!androidClientId) {
-                throw new Error("GOOGLE_ANDROID_CLIENT_ID is missing");
-            }
+            // =====================
+            // ENV DEBUG LOGY
+            // =====================
+            console.log("🌍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
+            console.log("🤖 GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
 
-            // 🔑 Ověřujeme POUZE proti ANDROID client ID
+            const audienceList = [
+                process.env.GOOGLE_ANDROID_CLIENT_ID,
+                process.env.GOOGLE_CLIENT_ID,
+            ];
+
+            console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
+
+            // ======================
+            // VERIFY TOKEN
+            // ======================
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: androidClientId,
+                audience: undefined, // vypnuto pro debug
             });
 
+            console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
+
+            // payload získáme TADY
+            // @ts-ignore — Google Auth má špatné typy
             const payload = ticket.getPayload();
 
-            console.log("🧪 PAYLOAD.AUD =", payload?.aud);
-            console.log("🧪 EXPECTED GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
+            console.log("🔍 PAYLOAD AZP:", payload?.azp);
+            console.log("🔍 PAYLOAD AUD:", payload?.aud);
+            console.log(
+                "🔍 EXPECTED:",
+                process.env.GOOGLE_ANDROID_CLIENT_ID,
+                process.env.GOOGLE_CLIENT_ID
+            );
 
-            if (!payload || !payload.email || !payload.sub) {
-                throw new UnauthorizedException("INVALID_GOOGLE_PAYLOAD");
+            console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
+
+
+            // =====================
+            // VALIDACE
+            // =====================
+            if (!payload) {
+                console.error("❌ NO PAYLOAD RETURNED FROM GOOGLE");
+                throw new UnauthorizedException("NO_PAYLOAD");
             }
+
+            if (!payload.email) {
+                console.error("❌ PAYLOAD HAS NO EMAIL");
+                throw new UnauthorizedException("NO_EMAIL");
+            }
+
+            console.log("📧 EMAIL:", payload.email);
+            console.log("🆔 GOOGLE SUB:", payload.sub);
+            console.log("👤 NAME:", payload.name);
 
             const email = payload.email;
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
 
-            let user = await this.prisma.user.findUnique({
-                where: { email },
-            });
+            // =====================
+            // UŽIVATEL V DATABÁZI
+            // =====================
+            console.log("🔎 Checking if user exists in DB…");
+
+            let user = await this.prisma.user.findUnique({ where: { email } });
 
             if (!user) {
+                console.log("🆕 User not found → creating");
+
                 user = await this.prisma.user.create({
                     data: {
                         email,
@@ -151,8 +192,15 @@ export class AuthService {
                         passwordhash: null,
                     },
                 });
+            } else {
+                console.log("👋 User exists, logging in");
             }
 
+            console.log("🧪 DB User:", user);
+
+            // =====================
+            // GENERATE TOKENS
+            // =====================
             const accessToken = this.jwtService.sign(
                 { sub: user.id },
                 { expiresIn: "15m" }
@@ -162,6 +210,8 @@ export class AuthService {
                 { sub: user.id },
                 { expiresIn: "30d" }
             );
+
+            console.log("🎫 TOKENS CREATED OK");
 
             return { accessToken, refreshToken };
 
