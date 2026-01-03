@@ -126,6 +126,9 @@ export class AuthService {
 
             const payload = ticket.getPayload();
 
+            console.log("🧪 PAYLOAD.AUD =", payload?.aud);
+            console.log("🧪 EXPECTED GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
+
             if (!payload || !payload.email || !payload.sub) {
                 throw new UnauthorizedException("INVALID_GOOGLE_PAYLOAD");
             }
