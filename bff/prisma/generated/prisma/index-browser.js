@@ -211,6 +211,17 @@ exports.Prisma.TripsScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.TripMapCacheScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  imageUrl: 'imageUrl',
+  fromText: 'fromText',
+  toText: 'toText',
+  transport: 'transport',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -238,7 +249,8 @@ exports.Prisma.ModelName = {
   Groups: 'Groups',
   Themes: 'Themes',
   TripShares: 'TripShares',
-  Trips: 'Trips'
+  Trips: 'Trips',
+  TripMapCache: 'TripMapCache'
 };
 
 /**

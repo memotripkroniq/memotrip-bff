@@ -3,9 +3,8 @@ import OpenAI from "openai";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
 import { uploadTripMap } from "../storage/r2-upload";
 import { RenderTripMapDto } from "./dto/render-trip-map.dto";
-import { randomUUID } from "crypto";
-import {MapRenderService} from "./map-render.service";
-
+import { MapRenderService } from "./map-render.service";
+import { LineString } from "geojson";
 
 @Injectable()
 export class TripMapService {
@@ -14,9 +13,12 @@ export class TripMapService {
     constructor(
         @Inject("OPENAI")
         private readonly openai: OpenAI,
-        private readonly mapRender: MapRenderService
+        private readonly mapRender: MapRenderService,
     ) {}
 
+    // ─────────────────────────────
+    // 🎨 AI MAP (OPENAI)
+    // ─────────────────────────────
     async generateTripMap(
         dto: GenerateTripMapDto
     ): Promise<{ imageUrl: string }> {
@@ -24,36 +26,44 @@ export class TripMapService {
         const prompt = this.buildPrompt(dto);
 
         try {
-            // ✅ Images API – JEDINÁ SPRÁVNÁ CESTA PRO OBRÁZKY
             const img = await this.openai.images.generate({
                 model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-1",
                 prompt,
-                size: "1024x1024", // ⛔ jiné rozměry NEJSOU povolené
+                size: "1024x1024",
             });
 
             const imageBase64 = img.data?.[0]?.b64_json;
-
             if (!imageBase64) {
-                this.logger.error("OpenAI returned no image data", img);
-                throw new Error("OpenAI did not return image data");
+                throw new Error("OpenAI returned no image data");
             }
 
-            // 🔥 Upload do Cloudflare R2 → vrací VEŘEJNÉ URL
             const imageUrl = await uploadTripMap(imageBase64);
-
             return { imageUrl };
 
         } catch (err: any) {
-            this.logger.error(
-                "Trip map generation failed",
-                err?.message ?? err
-            );
-
-            // přepošleme čitelnou chybu ven
+            this.logger.error("Trip map generation failed", err?.message ?? err);
             throw err;
         }
     }
 
+    // ─────────────────────────────
+    // 🗺️ MAP RENDER (OSM / ROUTE)
+    // ─────────────────────────────
+    async renderTripMap(
+        dto: RenderTripMapDto,
+        route: LineString
+    ): Promise<{ imageUrl: string }> {
+
+        const pngBuffer = await this.mapRender.renderToPng(route);
+        const imageBase64 = pngBuffer.toString("base64");
+        const imageUrl = await uploadTripMap(imageBase64);
+
+        return { imageUrl };
+    }
+
+    // ─────────────────────────────
+    // 🧠 PROMPT
+    // ─────────────────────────────
     private buildPrompt(dto: GenerateTripMapDto): string {
         return `
 Draw a clean, minimalist route map illustration for a travel app header.
@@ -81,21 +91,4 @@ Output:
 - centered composition
         `.trim();
     }
-
-    async renderTripMap(
-        dto: RenderTripMapDto,
-        route: import("geojson").LineString
-    ): Promise<{ imageUrl: string }> {
-
-        // 🖼️ Render mapy do PNG
-        const pngBuffer = await this.mapRender.renderToPng(route);
-
-        // 🔥 Upload do R2
-        const imageBase64 = pngBuffer.toString("base64");
-        const imageUrl = await uploadTripMap(imageBase64);
-
-        return { imageUrl };
-    }
 }
-
-

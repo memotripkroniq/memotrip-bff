@@ -68,6 +68,11 @@ export type TripShares = $Result.DefaultSelection<Prisma.$TripSharesPayload>
  * 
  */
 export type Trips = $Result.DefaultSelection<Prisma.$TripsPayload>
+/**
+ * Model TripMapCache
+ * 
+ */
+export type TripMapCache = $Result.DefaultSelection<Prisma.$TripMapCachePayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -296,6 +301,16 @@ export class PrismaClient<
     * ```
     */
   get trips(): Prisma.TripsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.tripMapCache`: Exposes CRUD operations for the **TripMapCache** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more TripMapCaches
+    * const tripMapCaches = await prisma.tripMapCache.findMany()
+    * ```
+    */
+  get tripMapCache(): Prisma.TripMapCacheDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -746,7 +761,8 @@ export namespace Prisma {
     Groups: 'Groups',
     Themes: 'Themes',
     TripShares: 'TripShares',
-    Trips: 'Trips'
+    Trips: 'Trips',
+    TripMapCache: 'TripMapCache'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -765,7 +781,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "book" | "location" | "notification" | "order" | "payment" | "user" | "groupMembers" | "groups" | "themes" | "tripShares" | "trips"
+      modelProps: "book" | "location" | "notification" | "order" | "payment" | "user" | "groupMembers" | "groups" | "themes" | "tripShares" | "trips" | "tripMapCache"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1583,6 +1599,80 @@ export namespace Prisma {
           }
         }
       }
+      TripMapCache: {
+        payload: Prisma.$TripMapCachePayload<ExtArgs>
+        fields: Prisma.TripMapCacheFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.TripMapCacheFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.TripMapCacheFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          findFirst: {
+            args: Prisma.TripMapCacheFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.TripMapCacheFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          findMany: {
+            args: Prisma.TripMapCacheFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>[]
+          }
+          create: {
+            args: Prisma.TripMapCacheCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          createMany: {
+            args: Prisma.TripMapCacheCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.TripMapCacheCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>[]
+          }
+          delete: {
+            args: Prisma.TripMapCacheDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          update: {
+            args: Prisma.TripMapCacheUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          deleteMany: {
+            args: Prisma.TripMapCacheDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.TripMapCacheUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.TripMapCacheUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>[]
+          }
+          upsert: {
+            args: Prisma.TripMapCacheUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TripMapCachePayload>
+          }
+          aggregate: {
+            args: Prisma.TripMapCacheAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTripMapCache>
+          }
+          groupBy: {
+            args: Prisma.TripMapCacheGroupByArgs<ExtArgs>
+            result: $Utils.Optional<TripMapCacheGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.TripMapCacheCountArgs<ExtArgs>
+            result: $Utils.Optional<TripMapCacheCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1690,6 +1780,7 @@ export namespace Prisma {
     themes?: ThemesOmit
     tripShares?: TripSharesOmit
     trips?: TripsOmit
+    tripMapCache?: TripMapCacheOmit
   }
 
   /* Types for Logging */
@@ -14080,6 +14171,1040 @@ export namespace Prisma {
 
 
   /**
+   * Model TripMapCache
+   */
+
+  export type AggregateTripMapCache = {
+    _count: TripMapCacheCountAggregateOutputType | null
+    _min: TripMapCacheMinAggregateOutputType | null
+    _max: TripMapCacheMaxAggregateOutputType | null
+  }
+
+  export type TripMapCacheMinAggregateOutputType = {
+    id: string | null
+    cacheKey: string | null
+    imageUrl: string | null
+    fromText: string | null
+    toText: string | null
+    transport: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type TripMapCacheMaxAggregateOutputType = {
+    id: string | null
+    cacheKey: string | null
+    imageUrl: string | null
+    fromText: string | null
+    toText: string | null
+    transport: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type TripMapCacheCountAggregateOutputType = {
+    id: number
+    cacheKey: number
+    imageUrl: number
+    fromText: number
+    toText: number
+    transport: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type TripMapCacheMinAggregateInputType = {
+    id?: true
+    cacheKey?: true
+    imageUrl?: true
+    fromText?: true
+    toText?: true
+    transport?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type TripMapCacheMaxAggregateInputType = {
+    id?: true
+    cacheKey?: true
+    imageUrl?: true
+    fromText?: true
+    toText?: true
+    transport?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type TripMapCacheCountAggregateInputType = {
+    id?: true
+    cacheKey?: true
+    imageUrl?: true
+    fromText?: true
+    toText?: true
+    transport?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type TripMapCacheAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TripMapCache to aggregate.
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TripMapCaches to fetch.
+     */
+    orderBy?: TripMapCacheOrderByWithRelationInput | TripMapCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: TripMapCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TripMapCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TripMapCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned TripMapCaches
+    **/
+    _count?: true | TripMapCacheCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: TripMapCacheMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: TripMapCacheMaxAggregateInputType
+  }
+
+  export type GetTripMapCacheAggregateType<T extends TripMapCacheAggregateArgs> = {
+        [P in keyof T & keyof AggregateTripMapCache]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTripMapCache[P]>
+      : GetScalarType<T[P], AggregateTripMapCache[P]>
+  }
+
+
+
+
+  export type TripMapCacheGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TripMapCacheWhereInput
+    orderBy?: TripMapCacheOrderByWithAggregationInput | TripMapCacheOrderByWithAggregationInput[]
+    by: TripMapCacheScalarFieldEnum[] | TripMapCacheScalarFieldEnum
+    having?: TripMapCacheScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: TripMapCacheCountAggregateInputType | true
+    _min?: TripMapCacheMinAggregateInputType
+    _max?: TripMapCacheMaxAggregateInputType
+  }
+
+  export type TripMapCacheGroupByOutputType = {
+    id: string
+    cacheKey: string
+    imageUrl: string
+    fromText: string | null
+    toText: string | null
+    transport: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: TripMapCacheCountAggregateOutputType | null
+    _min: TripMapCacheMinAggregateOutputType | null
+    _max: TripMapCacheMaxAggregateOutputType | null
+  }
+
+  type GetTripMapCacheGroupByPayload<T extends TripMapCacheGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<TripMapCacheGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof TripMapCacheGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], TripMapCacheGroupByOutputType[P]>
+            : GetScalarType<T[P], TripMapCacheGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type TripMapCacheSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cacheKey?: boolean
+    imageUrl?: boolean
+    fromText?: boolean
+    toText?: boolean
+    transport?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["tripMapCache"]>
+
+  export type TripMapCacheSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cacheKey?: boolean
+    imageUrl?: boolean
+    fromText?: boolean
+    toText?: boolean
+    transport?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["tripMapCache"]>
+
+  export type TripMapCacheSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cacheKey?: boolean
+    imageUrl?: boolean
+    fromText?: boolean
+    toText?: boolean
+    transport?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["tripMapCache"]>
+
+  export type TripMapCacheSelectScalar = {
+    id?: boolean
+    cacheKey?: boolean
+    imageUrl?: boolean
+    fromText?: boolean
+    toText?: boolean
+    transport?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type TripMapCacheOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "cacheKey" | "imageUrl" | "fromText" | "toText" | "transport" | "createdAt" | "updatedAt", ExtArgs["result"]["tripMapCache"]>
+
+  export type $TripMapCachePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "TripMapCache"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      cacheKey: string
+      imageUrl: string
+      fromText: string | null
+      toText: string | null
+      transport: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["tripMapCache"]>
+    composites: {}
+  }
+
+  type TripMapCacheGetPayload<S extends boolean | null | undefined | TripMapCacheDefaultArgs> = $Result.GetResult<Prisma.$TripMapCachePayload, S>
+
+  type TripMapCacheCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<TripMapCacheFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: TripMapCacheCountAggregateInputType | true
+    }
+
+  export interface TripMapCacheDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['TripMapCache'], meta: { name: 'TripMapCache' } }
+    /**
+     * Find zero or one TripMapCache that matches the filter.
+     * @param {TripMapCacheFindUniqueArgs} args - Arguments to find a TripMapCache
+     * @example
+     * // Get one TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TripMapCacheFindUniqueArgs>(args: SelectSubset<T, TripMapCacheFindUniqueArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one TripMapCache that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {TripMapCacheFindUniqueOrThrowArgs} args - Arguments to find a TripMapCache
+     * @example
+     * // Get one TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TripMapCacheFindUniqueOrThrowArgs>(args: SelectSubset<T, TripMapCacheFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TripMapCache that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheFindFirstArgs} args - Arguments to find a TripMapCache
+     * @example
+     * // Get one TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TripMapCacheFindFirstArgs>(args?: SelectSubset<T, TripMapCacheFindFirstArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TripMapCache that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheFindFirstOrThrowArgs} args - Arguments to find a TripMapCache
+     * @example
+     * // Get one TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TripMapCacheFindFirstOrThrowArgs>(args?: SelectSubset<T, TripMapCacheFindFirstOrThrowArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more TripMapCaches that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all TripMapCaches
+     * const tripMapCaches = await prisma.tripMapCache.findMany()
+     * 
+     * // Get first 10 TripMapCaches
+     * const tripMapCaches = await prisma.tripMapCache.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tripMapCacheWithIdOnly = await prisma.tripMapCache.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends TripMapCacheFindManyArgs>(args?: SelectSubset<T, TripMapCacheFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a TripMapCache.
+     * @param {TripMapCacheCreateArgs} args - Arguments to create a TripMapCache.
+     * @example
+     * // Create one TripMapCache
+     * const TripMapCache = await prisma.tripMapCache.create({
+     *   data: {
+     *     // ... data to create a TripMapCache
+     *   }
+     * })
+     * 
+     */
+    create<T extends TripMapCacheCreateArgs>(args: SelectSubset<T, TripMapCacheCreateArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many TripMapCaches.
+     * @param {TripMapCacheCreateManyArgs} args - Arguments to create many TripMapCaches.
+     * @example
+     * // Create many TripMapCaches
+     * const tripMapCache = await prisma.tripMapCache.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends TripMapCacheCreateManyArgs>(args?: SelectSubset<T, TripMapCacheCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many TripMapCaches and returns the data saved in the database.
+     * @param {TripMapCacheCreateManyAndReturnArgs} args - Arguments to create many TripMapCaches.
+     * @example
+     * // Create many TripMapCaches
+     * const tripMapCache = await prisma.tripMapCache.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many TripMapCaches and only return the `id`
+     * const tripMapCacheWithIdOnly = await prisma.tripMapCache.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends TripMapCacheCreateManyAndReturnArgs>(args?: SelectSubset<T, TripMapCacheCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a TripMapCache.
+     * @param {TripMapCacheDeleteArgs} args - Arguments to delete one TripMapCache.
+     * @example
+     * // Delete one TripMapCache
+     * const TripMapCache = await prisma.tripMapCache.delete({
+     *   where: {
+     *     // ... filter to delete one TripMapCache
+     *   }
+     * })
+     * 
+     */
+    delete<T extends TripMapCacheDeleteArgs>(args: SelectSubset<T, TripMapCacheDeleteArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one TripMapCache.
+     * @param {TripMapCacheUpdateArgs} args - Arguments to update one TripMapCache.
+     * @example
+     * // Update one TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends TripMapCacheUpdateArgs>(args: SelectSubset<T, TripMapCacheUpdateArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more TripMapCaches.
+     * @param {TripMapCacheDeleteManyArgs} args - Arguments to filter TripMapCaches to delete.
+     * @example
+     * // Delete a few TripMapCaches
+     * const { count } = await prisma.tripMapCache.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends TripMapCacheDeleteManyArgs>(args?: SelectSubset<T, TripMapCacheDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TripMapCaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many TripMapCaches
+     * const tripMapCache = await prisma.tripMapCache.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends TripMapCacheUpdateManyArgs>(args: SelectSubset<T, TripMapCacheUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TripMapCaches and returns the data updated in the database.
+     * @param {TripMapCacheUpdateManyAndReturnArgs} args - Arguments to update many TripMapCaches.
+     * @example
+     * // Update many TripMapCaches
+     * const tripMapCache = await prisma.tripMapCache.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more TripMapCaches and only return the `id`
+     * const tripMapCacheWithIdOnly = await prisma.tripMapCache.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends TripMapCacheUpdateManyAndReturnArgs>(args: SelectSubset<T, TripMapCacheUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one TripMapCache.
+     * @param {TripMapCacheUpsertArgs} args - Arguments to update or create a TripMapCache.
+     * @example
+     * // Update or create a TripMapCache
+     * const tripMapCache = await prisma.tripMapCache.upsert({
+     *   create: {
+     *     // ... data to create a TripMapCache
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the TripMapCache we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TripMapCacheUpsertArgs>(args: SelectSubset<T, TripMapCacheUpsertArgs<ExtArgs>>): Prisma__TripMapCacheClient<$Result.GetResult<Prisma.$TripMapCachePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of TripMapCaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheCountArgs} args - Arguments to filter TripMapCaches to count.
+     * @example
+     * // Count the number of TripMapCaches
+     * const count = await prisma.tripMapCache.count({
+     *   where: {
+     *     // ... the filter for the TripMapCaches we want to count
+     *   }
+     * })
+    **/
+    count<T extends TripMapCacheCountArgs>(
+      args?: Subset<T, TripMapCacheCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], TripMapCacheCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a TripMapCache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TripMapCacheAggregateArgs>(args: Subset<T, TripMapCacheAggregateArgs>): Prisma.PrismaPromise<GetTripMapCacheAggregateType<T>>
+
+    /**
+     * Group by TripMapCache.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TripMapCacheGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends TripMapCacheGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: TripMapCacheGroupByArgs['orderBy'] }
+        : { orderBy?: TripMapCacheGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, TripMapCacheGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTripMapCacheGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the TripMapCache model
+   */
+  readonly fields: TripMapCacheFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for TripMapCache.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__TripMapCacheClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the TripMapCache model
+   */
+  interface TripMapCacheFieldRefs {
+    readonly id: FieldRef<"TripMapCache", 'String'>
+    readonly cacheKey: FieldRef<"TripMapCache", 'String'>
+    readonly imageUrl: FieldRef<"TripMapCache", 'String'>
+    readonly fromText: FieldRef<"TripMapCache", 'String'>
+    readonly toText: FieldRef<"TripMapCache", 'String'>
+    readonly transport: FieldRef<"TripMapCache", 'String'>
+    readonly createdAt: FieldRef<"TripMapCache", 'DateTime'>
+    readonly updatedAt: FieldRef<"TripMapCache", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * TripMapCache findUnique
+   */
+  export type TripMapCacheFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which TripMapCache to fetch.
+     */
+    where: TripMapCacheWhereUniqueInput
+  }
+
+  /**
+   * TripMapCache findUniqueOrThrow
+   */
+  export type TripMapCacheFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which TripMapCache to fetch.
+     */
+    where: TripMapCacheWhereUniqueInput
+  }
+
+  /**
+   * TripMapCache findFirst
+   */
+  export type TripMapCacheFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which TripMapCache to fetch.
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TripMapCaches to fetch.
+     */
+    orderBy?: TripMapCacheOrderByWithRelationInput | TripMapCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TripMapCaches.
+     */
+    cursor?: TripMapCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TripMapCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TripMapCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TripMapCaches.
+     */
+    distinct?: TripMapCacheScalarFieldEnum | TripMapCacheScalarFieldEnum[]
+  }
+
+  /**
+   * TripMapCache findFirstOrThrow
+   */
+  export type TripMapCacheFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which TripMapCache to fetch.
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TripMapCaches to fetch.
+     */
+    orderBy?: TripMapCacheOrderByWithRelationInput | TripMapCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TripMapCaches.
+     */
+    cursor?: TripMapCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TripMapCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TripMapCaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TripMapCaches.
+     */
+    distinct?: TripMapCacheScalarFieldEnum | TripMapCacheScalarFieldEnum[]
+  }
+
+  /**
+   * TripMapCache findMany
+   */
+  export type TripMapCacheFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter, which TripMapCaches to fetch.
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TripMapCaches to fetch.
+     */
+    orderBy?: TripMapCacheOrderByWithRelationInput | TripMapCacheOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing TripMapCaches.
+     */
+    cursor?: TripMapCacheWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TripMapCaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TripMapCaches.
+     */
+    skip?: number
+    distinct?: TripMapCacheScalarFieldEnum | TripMapCacheScalarFieldEnum[]
+  }
+
+  /**
+   * TripMapCache create
+   */
+  export type TripMapCacheCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * The data needed to create a TripMapCache.
+     */
+    data: XOR<TripMapCacheCreateInput, TripMapCacheUncheckedCreateInput>
+  }
+
+  /**
+   * TripMapCache createMany
+   */
+  export type TripMapCacheCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many TripMapCaches.
+     */
+    data: TripMapCacheCreateManyInput | TripMapCacheCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TripMapCache createManyAndReturn
+   */
+  export type TripMapCacheCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * The data used to create many TripMapCaches.
+     */
+    data: TripMapCacheCreateManyInput | TripMapCacheCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TripMapCache update
+   */
+  export type TripMapCacheUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * The data needed to update a TripMapCache.
+     */
+    data: XOR<TripMapCacheUpdateInput, TripMapCacheUncheckedUpdateInput>
+    /**
+     * Choose, which TripMapCache to update.
+     */
+    where: TripMapCacheWhereUniqueInput
+  }
+
+  /**
+   * TripMapCache updateMany
+   */
+  export type TripMapCacheUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update TripMapCaches.
+     */
+    data: XOR<TripMapCacheUpdateManyMutationInput, TripMapCacheUncheckedUpdateManyInput>
+    /**
+     * Filter which TripMapCaches to update
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * Limit how many TripMapCaches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TripMapCache updateManyAndReturn
+   */
+  export type TripMapCacheUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * The data used to update TripMapCaches.
+     */
+    data: XOR<TripMapCacheUpdateManyMutationInput, TripMapCacheUncheckedUpdateManyInput>
+    /**
+     * Filter which TripMapCaches to update
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * Limit how many TripMapCaches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TripMapCache upsert
+   */
+  export type TripMapCacheUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * The filter to search for the TripMapCache to update in case it exists.
+     */
+    where: TripMapCacheWhereUniqueInput
+    /**
+     * In case the TripMapCache found by the `where` argument doesn't exist, create a new TripMapCache with this data.
+     */
+    create: XOR<TripMapCacheCreateInput, TripMapCacheUncheckedCreateInput>
+    /**
+     * In case the TripMapCache was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<TripMapCacheUpdateInput, TripMapCacheUncheckedUpdateInput>
+  }
+
+  /**
+   * TripMapCache delete
+   */
+  export type TripMapCacheDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+    /**
+     * Filter which TripMapCache to delete.
+     */
+    where: TripMapCacheWhereUniqueInput
+  }
+
+  /**
+   * TripMapCache deleteMany
+   */
+  export type TripMapCacheDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TripMapCaches to delete
+     */
+    where?: TripMapCacheWhereInput
+    /**
+     * Limit how many TripMapCaches to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * TripMapCache without action
+   */
+  export type TripMapCacheDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TripMapCache
+     */
+    select?: TripMapCacheSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TripMapCache
+     */
+    omit?: TripMapCacheOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -14215,6 +15340,20 @@ export namespace Prisma {
   };
 
   export type TripsScalarFieldEnum = (typeof TripsScalarFieldEnum)[keyof typeof TripsScalarFieldEnum]
+
+
+  export const TripMapCacheScalarFieldEnum: {
+    id: 'id',
+    cacheKey: 'cacheKey',
+    imageUrl: 'imageUrl',
+    fromText: 'fromText',
+    toText: 'toText',
+    transport: 'transport',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type TripMapCacheScalarFieldEnum = (typeof TripMapCacheScalarFieldEnum)[keyof typeof TripMapCacheScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -14971,6 +16110,73 @@ export namespace Prisma {
     createdAt?: DateTimeNullableWithAggregatesFilter<"Trips"> | Date | string | null
   }
 
+  export type TripMapCacheWhereInput = {
+    AND?: TripMapCacheWhereInput | TripMapCacheWhereInput[]
+    OR?: TripMapCacheWhereInput[]
+    NOT?: TripMapCacheWhereInput | TripMapCacheWhereInput[]
+    id?: UuidFilter<"TripMapCache"> | string
+    cacheKey?: StringFilter<"TripMapCache"> | string
+    imageUrl?: StringFilter<"TripMapCache"> | string
+    fromText?: StringNullableFilter<"TripMapCache"> | string | null
+    toText?: StringNullableFilter<"TripMapCache"> | string | null
+    transport?: StringNullableFilter<"TripMapCache"> | string | null
+    createdAt?: DateTimeFilter<"TripMapCache"> | Date | string
+    updatedAt?: DateTimeFilter<"TripMapCache"> | Date | string
+  }
+
+  export type TripMapCacheOrderByWithRelationInput = {
+    id?: SortOrder
+    cacheKey?: SortOrder
+    imageUrl?: SortOrder
+    fromText?: SortOrderInput | SortOrder
+    toText?: SortOrderInput | SortOrder
+    transport?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TripMapCacheWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    cacheKey?: string
+    AND?: TripMapCacheWhereInput | TripMapCacheWhereInput[]
+    OR?: TripMapCacheWhereInput[]
+    NOT?: TripMapCacheWhereInput | TripMapCacheWhereInput[]
+    imageUrl?: StringFilter<"TripMapCache"> | string
+    fromText?: StringNullableFilter<"TripMapCache"> | string | null
+    toText?: StringNullableFilter<"TripMapCache"> | string | null
+    transport?: StringNullableFilter<"TripMapCache"> | string | null
+    createdAt?: DateTimeFilter<"TripMapCache"> | Date | string
+    updatedAt?: DateTimeFilter<"TripMapCache"> | Date | string
+  }, "id" | "cacheKey">
+
+  export type TripMapCacheOrderByWithAggregationInput = {
+    id?: SortOrder
+    cacheKey?: SortOrder
+    imageUrl?: SortOrder
+    fromText?: SortOrderInput | SortOrder
+    toText?: SortOrderInput | SortOrder
+    transport?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: TripMapCacheCountOrderByAggregateInput
+    _max?: TripMapCacheMaxOrderByAggregateInput
+    _min?: TripMapCacheMinOrderByAggregateInput
+  }
+
+  export type TripMapCacheScalarWhereWithAggregatesInput = {
+    AND?: TripMapCacheScalarWhereWithAggregatesInput | TripMapCacheScalarWhereWithAggregatesInput[]
+    OR?: TripMapCacheScalarWhereWithAggregatesInput[]
+    NOT?: TripMapCacheScalarWhereWithAggregatesInput | TripMapCacheScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"TripMapCache"> | string
+    cacheKey?: StringWithAggregatesFilter<"TripMapCache"> | string
+    imageUrl?: StringWithAggregatesFilter<"TripMapCache"> | string
+    fromText?: StringNullableWithAggregatesFilter<"TripMapCache"> | string | null
+    toText?: StringNullableWithAggregatesFilter<"TripMapCache"> | string | null
+    transport?: StringNullableWithAggregatesFilter<"TripMapCache"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"TripMapCache"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"TripMapCache"> | Date | string
+  }
+
   export type BookCreateInput = {
     id?: string
     title: string
@@ -15641,6 +16847,83 @@ export namespace Prisma {
     createdAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type TripMapCacheCreateInput = {
+    id?: string
+    cacheKey: string
+    imageUrl: string
+    fromText?: string | null
+    toText?: string | null
+    transport?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TripMapCacheUncheckedCreateInput = {
+    id?: string
+    cacheKey: string
+    imageUrl: string
+    fromText?: string | null
+    toText?: string | null
+    transport?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TripMapCacheUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    cacheKey?: StringFieldUpdateOperationsInput | string
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    fromText?: NullableStringFieldUpdateOperationsInput | string | null
+    toText?: NullableStringFieldUpdateOperationsInput | string | null
+    transport?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TripMapCacheUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    cacheKey?: StringFieldUpdateOperationsInput | string
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    fromText?: NullableStringFieldUpdateOperationsInput | string | null
+    toText?: NullableStringFieldUpdateOperationsInput | string | null
+    transport?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TripMapCacheCreateManyInput = {
+    id?: string
+    cacheKey: string
+    imageUrl: string
+    fromText?: string | null
+    toText?: string | null
+    transport?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type TripMapCacheUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    cacheKey?: StringFieldUpdateOperationsInput | string
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    fromText?: NullableStringFieldUpdateOperationsInput | string | null
+    toText?: NullableStringFieldUpdateOperationsInput | string | null
+    transport?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TripMapCacheUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    cacheKey?: StringFieldUpdateOperationsInput | string
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    fromText?: NullableStringFieldUpdateOperationsInput | string | null
+    toText?: NullableStringFieldUpdateOperationsInput | string | null
+    transport?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type UuidFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -16287,6 +17570,39 @@ export namespace Prisma {
     startDate?: SortOrder
     endDate?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type TripMapCacheCountOrderByAggregateInput = {
+    id?: SortOrder
+    cacheKey?: SortOrder
+    imageUrl?: SortOrder
+    fromText?: SortOrder
+    toText?: SortOrder
+    transport?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TripMapCacheMaxOrderByAggregateInput = {
+    id?: SortOrder
+    cacheKey?: SortOrder
+    imageUrl?: SortOrder
+    fromText?: SortOrder
+    toText?: SortOrder
+    transport?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type TripMapCacheMinOrderByAggregateInput = {
+    id?: SortOrder
+    cacheKey?: SortOrder
+    imageUrl?: SortOrder
+    fromText?: SortOrder
+    toText?: SortOrder
+    transport?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
   }
 
   export type OrderCreateNestedManyWithoutBookInput = {
