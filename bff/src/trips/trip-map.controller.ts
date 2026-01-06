@@ -34,6 +34,10 @@ export class TripMapController {
         const from = await this.geocoding.geocode(dto.from);
         const to = await this.geocoding.geocode(dto.to);
 
+        // 🆕 připravené waypointy (zatím NEPOUŽITÉ)
+        const stops = dto.stops ?? [];
+
+        // 🔴 dnešní stav – routing pořád jen from → to
         const route = await this.osrm.route(from, to);
 
         const renderDto: RenderTripMapDto = {
@@ -44,6 +48,4 @@ export class TripMapController {
 
         return this.tripMapService.renderTripMap(renderDto, route.geometry);
     }
-
-
 }

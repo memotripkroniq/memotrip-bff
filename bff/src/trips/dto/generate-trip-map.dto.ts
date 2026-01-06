@@ -1,4 +1,4 @@
-﻿import { IsArray, IsString } from "class-validator";
+﻿import {IsArray, IsOptional, IsString} from "class-validator";
 
 export class GenerateTripMapDto {
     @IsString()
@@ -9,4 +9,9 @@ export class GenerateTripMapDto {
 
     @IsArray()
     transports!: string[]; // ["CAR", "CARAVAN"] ...
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    stops?: string[]; // 🆕 WAYPOINTS
 }

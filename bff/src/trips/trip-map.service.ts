@@ -65,11 +65,13 @@ export class TripMapService {
     // 🧠 PROMPT
     // ─────────────────────────────
     private buildPrompt(dto: GenerateTripMapDto): string {
+        const stops = dto.stops ?? [];
         return `
 Draw a clean, minimalist route map illustration for a travel app header.
 
 Route:
 - From: "${dto.from}"
+- ${stops.length ? `Stops: ${stops.join(" → ")}` : ""}
 - To: "${dto.to}"
 - Transport modes: ${dto.transports.join(", ")}
 

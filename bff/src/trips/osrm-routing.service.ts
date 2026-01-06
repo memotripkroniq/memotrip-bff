@@ -17,18 +17,34 @@ type OsrmResponse = {
     }>;
 };
 
+type Coordinate = { lat: number; lon: number }; // 🆕 sjednocený typ
+
 @Injectable()
 export class OsrmRoutingService {
     private readonly baseUrl = "https://router.project-osrm.org";
 
     async route(
-        from: { lat: number; lon: number },
-        to: { lat: number; lon: number }
+        from: Coordinate,
+        to: Coordinate,
+        stops: Coordinate[] = [] // 🆕 waypointy (nepovinné)
     ): Promise<OsrmRouteResult> {
 
+        // 🆕 připravená struktura bodů (zatím NEPOUŽITÁ v URL)
+        const points: Coordinate[] = [
+            from,
+            ...stops,
+            to
+        ];
+
+        // 🆕 OSRM očekává "lon,lat;lon,lat;..."
+        const coordinates = points
+            .map(p => `${p.lon},${p.lat}`)
+            .join(";");
+
+
+        // 🆕 waypointy jsou AKTIVNĚ použité
         const url =
-            `${this.baseUrl}/route/v1/driving/` +
-            `${from.lon},${from.lat};${to.lon},${to.lat}` +
+            `${this.baseUrl}/route/v1/driving/${coordinates}` +
             `?overview=full&geometries=geojson`;
 
         const res = await fetch(url);
