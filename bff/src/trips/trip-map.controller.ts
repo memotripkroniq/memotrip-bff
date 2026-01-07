@@ -1,10 +1,11 @@
 ﻿import { Body, Controller, Post, Logger } from "@nestjs/common";
 import { TripMapService } from "./trip-map.service";
-import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
-import { PointDto } from "./dto/render-trip-map.dto";
+import { GenerateTripMapDto, TransportType } from "./dto/generate-trip-map.dto";
+import { PointDto, RenderTripMapDto } from "./dto/render-trip-map.dto";
 import { OsmGeocodingService } from "../locations/osm-geocoding.service";
 import { OsrmRoutingService } from "./osrm-routing.service";
 import { AiRoutePlannerService } from "./ai-route-planner.service";
+import type { LineString } from "geojson";
 
 @Controller("trips")
 export class TripMapController {
@@ -17,60 +18,128 @@ export class TripMapController {
         private readonly aiPlanner: AiRoutePlannerService
     ) {}
 
-    /**
-     * 🔴 STÁVAJÍCÍ ENDPOINT
-     * AI ilustrace mapy (OpenAI)
-     * NEMĚNÍME – funguje a zůstává
-     */
     @Post("generate-map")
-    async generateMap(
-        @Body() dto: GenerateTripMapDto
-    ) {
+    async generateMap(@Body() dto: GenerateTripMapDto) {
         return this.tripMapService.generateTripMap(dto);
     }
 
-    /**
-     * 🟢 NOVÝ ENDPOINT
-     * Připravený pro OSM render mapy
-     * FÁZE 1: AI planner pouze LOGUJEME
-     */
     @Post("render-map")
     async renderMap(@Body() dto: GenerateTripMapDto) {
+        // 1) AI plán segmentů
+        const plan = await this.aiPlanner.plan(dto);
+        this.logger.log(`AI PLAN: ${JSON.stringify(plan)}`);
 
-        // 🧠 FÁZE 1 – AI route planner (zatím jen plán + log)
-        const aiPlan = await this.aiPlanner.plan(dto);
-        this.logger.log(`AI ROUTE PLAN (phase 1): ${JSON.stringify(aiPlan)}`);
+        // 2) In-request geocode cache (aby se negeokódovalo 10x to samé "Košice")
+        const geoCache = new Map<string, PointDto>();
+        const geocodeCached = async (text: string): Promise<PointDto> => {
+            const key = text.trim();
+            const cached = geoCache.get(key);
+            if (cached) return cached;
 
-        // ─────────────────────────────
-        // ⛔ DÁL ZATÍM NEMĚNÍME LOGIKU
-        // ⛔ NEPOUŽÍVÁME aiPlan PRO RENDER
-        // ─────────────────────────────
+            const p = await this.geocoding.geocode(key);
+            geoCache.set(key, p);
+            return p;
+        };
 
-        // 1️⃣ Geocode from / to
-        const from = await this.geocoding.geocode(dto.from);
-        const to = await this.geocoding.geocode(dto.to);
+        // 3) Urči, co jde přes OSRM a co jako přímka
+        const OSRM_TRANSPORTS = new Set<TransportType>([
+            TransportType.CAR,
+            TransportType.CARAVAN,
+            TransportType.CAMPER,
+            TransportType.MOTORCYCLE,
+            TransportType.BIKE,
+            TransportType.WALK,
+        ]);
 
-        // 2️⃣ Geocode waypointy
-        const stopNames = dto.stops ?? [];
-        const stops: PointDto[] = [];
+        const DIRECT_LINE_TRANSPORTS = new Set<TransportType>([
+            TransportType.PLANE,
+            TransportType.TRAIN,
+            TransportType.SHIP,
+        ]);
 
-        for (const name of stopNames) {
-            stops.push(await this.geocoding.geocode(name));
+        // 4) Připrav render DTO (segmenty v geo bodech)
+        const renderDto: RenderTripMapDto = {
+            segments: [],
+        };
+
+        // 5) Pro každý segment spočítej geometrii a sbírej koordináty pro finální sloučenou trasu
+        const lineParts: number[][][] = []; // array of LineString.coordinates
+
+        for (const seg of plan.segments) {
+            const fromPoint = await geocodeCached(seg.from);
+            const toPoint = await geocodeCached(seg.to);
+
+            // pro render metadata
+            renderDto.segments.push({
+                from: fromPoint,
+                to: toPoint,
+                transport: seg.transport,
+            });
+
+            // geometrie
+            if (OSRM_TRANSPORTS.has(seg.transport)) {
+                const route = await this.osrm.route(fromPoint, toPoint, []); // bez stops, protože segment je už "from -> to"
+                lineParts.push(route.geometry.coordinates);
+                continue;
+            }
+
+            if (DIRECT_LINE_TRANSPORTS.has(seg.transport)) {
+                lineParts.push([
+                    [fromPoint.lon, fromPoint.lat],
+                    [toPoint.lon, toPoint.lat],
+                ]);
+                continue;
+            }
+
+            // bezpečný fallback (kdyby přibyly nové transporty)
+            this.logger.warn(`Unknown transport "${seg.transport}", using direct line fallback`);
+            lineParts.push([
+                [fromPoint.lon, fromPoint.lat],
+                [toPoint.lon, toPoint.lat],
+            ]);
         }
 
-        // 3️⃣ Transport (zatím 1. v poli)
-        const transport = dto.transports[0];
+        // 6) Sloučení do jednoho LineString (protože tvůj renderer teď bere LineString)
+        const merged: LineString = {
+            type: "LineString",
+            coordinates: mergeLineParts(lineParts),
+        };
 
-        // 4️⃣ Výpočet ROUTY přes OSRM (už UMÍ waypointy)
-        const route = await this.osrm.route(from, to, stops);
-
-        // ⛔ Render zatím VYPÍNÁME (FÁZE 1)
-        // ⛔ RenderTripMapDto se NETVOŘÍ
+        // 7) Render do PNG + upload (přes existující TripMapService)
+        const { imageUrl } = await this.tripMapService.renderTripMap(renderDto, merged);
 
         return {
-            phase: 1,
-            aiPlan,
-            info: "AI planner active, render disabled in phase 1"
+            imageUrl,
+            plan, // nechávám v response zatím pro debug; ve FÁZI 4 můžeme vypnout
         };
     }
+}
+
+/**
+ * Sloučí více LineString částí do jednoho LineString.
+ * Odstraní duplicitní navazující bod (když poslední bod části == první bod další části).
+ */
+function mergeLineParts(parts: number[][][]): number[][] {
+    const out: number[][] = [];
+
+    const same = (a: number[], b: number[]) =>
+        a[0] === b[0] && a[1] === b[1];
+
+    for (const coords of parts) {
+        if (!coords?.length) continue;
+
+        if (out.length === 0) {
+            out.push(...coords);
+            continue;
+        }
+
+        // když navazuje, tak první bod nové části vynech
+        if (same(out[out.length - 1], coords[0])) {
+            out.push(...coords.slice(1));
+        } else {
+            out.push(...coords);
+        }
+    }
+
+    return out;
 }
