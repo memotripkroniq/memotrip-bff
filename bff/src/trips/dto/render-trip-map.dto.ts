@@ -9,7 +9,7 @@ export class PointDto {
     lon!: number;
 }
 
-export class RenderTripMapDto {
+export class RouteSegmentDto {
     @ValidateNested()
     @Type(() => PointDto)
     from!: PointDto;
@@ -18,6 +18,13 @@ export class RenderTripMapDto {
     @Type(() => PointDto)
     to!: PointDto;
 
-    @IsIn(["CAR", "CARAVAN", "BOAT"])
+    @IsIn(["PLANE", "CAR", "CAMPER", "CARAVAN", "MOTORCYCLE", "BIKE", "WALK", "SHIP", "TRAIN"])
     transport!: string;
 }
+
+export class RenderTripMapDto {
+    @ValidateNested({ each: true })
+    @Type(() => RouteSegmentDto)
+    segments!: RouteSegmentDto[];
+}
+

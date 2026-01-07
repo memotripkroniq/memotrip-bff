@@ -26,7 +26,8 @@ export class OsrmRoutingService {
     async route(
         from: Coordinate,
         to: Coordinate,
-        stops: Coordinate[] = [] // 🆕 waypointy (nepovinné)
+        stops: Coordinate[] = [], // 🆕 waypointy (nepovinné)
+        profile: "driving" | "cycling" | "foot" = "driving"
     ): Promise<OsrmRouteResult> {
 
         // 🆕 připravená struktura bodů (zatím NEPOUŽITÁ v URL)

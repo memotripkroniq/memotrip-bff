@@ -97,9 +97,13 @@ export class TripsService {
         // 3️⃣ RENDER MAP (EXPENSIVE PART)
         const { imageUrl } = await this.tripMapService.renderTripMap(
             {
-                from: fromPoint,
-                to: toPoint,
-                transport,
+                segments: [
+                    {
+                        from: fromPoint,
+                        to: toPoint,
+                        transport,
+                    },
+                ],
             },
             route
         );
