@@ -1,4 +1,4 @@
-﻿import {Inject, Injectable, Logger} from "@nestjs/common";
+﻿import { Inject, Injectable, Logger } from "@nestjs/common";
 import { GenerateTripMapDto, TransportType } from "./dto/generate-trip-map.dto";
 import { AiRoutePlanDto } from "./dto/ai-route-plan.dto";
 import OpenAI from "openai";
@@ -57,18 +57,23 @@ export class AiRoutePlannerService {
                         content: `
 You are a route planning assistant.
 
+Your task:
+Split the journey into ordered route segments.
+
 Rules:
 - Do NOT invent places.
 - Do NOT skip any point.
 - Use ONLY provided place names.
 - Use ONLY provided transport types.
-- Return ONLY valid JSON matching this shape:
+- Return ONLY valid JSON matching the required schema.
 
-{
-  "segments": [
-    { "from": "...", "to": "...", "transport": "CAR|PLANE|..." }
-  ]
-}
+Decision rules:
+- If PLANE is allowed and the distance between two cities is long
+  (for example Bratislava to Košice), you SHOULD prefer PLANE.
+- If there are multiple segments, you MAY mix transports.
+- If PLANE is allowed for a long-distance route, it MUST be used
+  at least once.
+- CAR is preferred for shorter or regional segments.
 `
                     },
                     {
@@ -108,6 +113,22 @@ Rules:
             if (errors.length > 0) {
                 this.logger.warn("AI JSON failed validation, using fallback");
                 return fallback();
+            }
+
+            // ─────────────────────────────
+            // 🛡 POST-CHECK: PLANE MUSÍ BÝT POUŽIT
+            // ─────────────────────────────
+            if (dto.transports.includes(TransportType.PLANE)) {
+                const hasPlane = plan.segments.some(
+                    s => s.transport === TransportType.PLANE
+                );
+
+                if (!hasPlane) {
+                    this.logger.warn(
+                        "AI ignored PLANE transport although it was allowed. Using fallback."
+                    );
+                    return fallback();
+                }
             }
 
             return plan;
