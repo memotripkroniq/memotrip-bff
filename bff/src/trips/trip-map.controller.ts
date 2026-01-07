@@ -41,6 +41,26 @@ export class TripMapController {
             return p;
         };
 
+        // 2.5) BACKEND HEURISTIKA – krátké úseky NESMÍ být PLANE
+        const MIN_PLANE_DISTANCE_KM = 150;
+
+        for (const seg of plan.segments) {
+            if (seg.transport === TransportType.PLANE) {
+                const fromPoint = await geocodeCached(seg.from);
+                const toPoint = await geocodeCached(seg.to);
+
+                const distanceKm = haversineKm(fromPoint, toPoint);
+
+                if (distanceKm < MIN_PLANE_DISTANCE_KM) {
+                    this.logger.log(
+                        `Switching PLANE -> CAR for short segment (${distanceKm.toFixed(1)} km): ${seg.from} → ${seg.to}`
+                    );
+                    seg.transport = TransportType.CAR;
+                }
+            }
+        }
+
+
         // 3) Urči, co jde přes OSRM a co jako přímka
         const OSRM_TRANSPORTS = new Set<TransportType>([
             TransportType.CAR,
@@ -142,4 +162,18 @@ function mergeLineParts(parts: number[][][]): number[][] {
     }
 
     return out;
+}
+
+function haversineKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+    const R = 6371;
+    const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+    const dLon = ((b.lon - a.lon) * Math.PI) / 180;
+    const lat1 = (a.lat * Math.PI) / 180;
+    const lat2 = (b.lat * Math.PI) / 180;
+
+    const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+
+    return 2 * R * Math.asin(Math.sqrt(h));
 }
