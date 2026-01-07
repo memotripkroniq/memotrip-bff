@@ -1,7 +1,7 @@
-﻿import { Injectable, Logger } from "@nestjs/common";
+﻿import {Inject, Injectable, Logger} from "@nestjs/common";
 import { GenerateTripMapDto, TransportType } from "./dto/generate-trip-map.dto";
 import { AiRoutePlanDto } from "./dto/ai-route-plan.dto";
-import { OpenAI } from "openai";
+import OpenAI from "openai";
 import { plainToInstance } from "class-transformer";
 import { validateSync } from "class-validator";
 
@@ -10,6 +10,7 @@ export class AiRoutePlannerService {
     private readonly logger = new Logger(AiRoutePlannerService.name);
 
     constructor(
+        @Inject("OPENAI")
         private readonly openai: OpenAI,
     ) {}
 
