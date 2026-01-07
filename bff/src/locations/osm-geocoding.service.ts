@@ -1,4 +1,4 @@
-﻿import { Injectable } from "@nestjs/common";
+﻿import {BadRequestException, Injectable} from "@nestjs/common";
 
 export type GeoPoint = { lat: number; lon: number };
 
@@ -38,7 +38,10 @@ export class OsmGeocodingService {
 
         const data = (await res.json()) as NominatimResult[];
         if (!data.length) {
-            throw new Error(`No geocoding result for: ${query}`);
+            throw new BadRequestException({
+                code: "GEOCODING_FAILED",
+                message: `Location not found: ${query}`,
+            });
         }
 
         const lat = Number(data[0].lat);
