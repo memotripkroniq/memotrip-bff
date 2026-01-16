@@ -121,4 +121,31 @@ export class TripsService {
 
         return imageUrl;
     }
+
+    // ─────────────────────────────
+    // 📜 TRIP HISTORY – MY TRIPS
+    // ─────────────────────────────
+    async getMyTrips(ownerId: string) {
+        const trips = await this.prisma.trips.findMany({
+            where: {
+                ownerId,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            select: {
+                id: true,
+                name: true,
+            },
+        });
+
+        // 🔁 mapování pro FE kontrakt
+        return trips.map(trip => ({
+            id: trip.id,
+            title: trip.name,
+            coverImageUrl: null,
+        }));
+    }
+
+
 }
