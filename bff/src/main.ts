@@ -11,7 +11,15 @@ async function bootstrap() {
         .setTitle('Memotrip API')
         .setDescription('API dokumentace pro Memotrip aplikaci')
         .setVersion('1.0')
-        .addBearerAuth()
+        .addBearerAuth(
+            {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                in: 'header',
+            },
+            'jwt',
+        )
         .build();
 
     const document = SwaggerModule.createDocument(app, config);
