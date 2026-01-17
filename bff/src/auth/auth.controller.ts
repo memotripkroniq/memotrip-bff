@@ -26,7 +26,7 @@ export class AuthController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
+    @ApiBearerAuth('jwt')
     @Get('me')
     async me(@Req() req: any) {
         return this.authService.getMe(req.user.sub);
