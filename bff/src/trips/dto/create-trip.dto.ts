@@ -5,6 +5,7 @@
     IsString,
     MaxLength,
 } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
     DestinationType,
     TripTheme,
@@ -12,42 +13,67 @@ import {
 } from "./trip.enums";
 
 export class CreateTripDto {
-    // 🏷️ Název tripu
+
+    @ApiProperty({
+        example: "Summer Europe Roadtrip",
+    })
     @IsString()
     name!: string;
 
-    // 🌍 Destination (continent)
+    @ApiProperty({
+        enum: DestinationType,
+        example: DestinationType.EUROPE,
+    })
     @IsEnum(DestinationType)
     destination!: DestinationType;
 
-    // 📅 Datum od
+    @ApiProperty({
+        example: "2026-07-01",
+        description: "ISO date (YYYY-MM-DD)",
+    })
     @IsString()
-    dateFrom!: string; // ISO string
+    dateFrom!: string;
 
-    // 📅 Datum do
+    @ApiProperty({
+        example: "2026-07-14",
+        description: "ISO date (YYYY-MM-DD)",
+    })
     @IsString()
-    dateTo!: string; // ISO string
+    dateTo!: string;
 
-    // 📍 Start
+    @ApiProperty({
+        example: "Bratislava",
+    })
     @IsString()
     from!: string;
 
-    // 📍 Cíl
+    @ApiProperty({
+        example: "Barcelona",
+    })
     @IsString()
     to!: string;
 
-    // ➕ Waypoints (max 3)
+    @ApiPropertyOptional({
+        example: ["Vienna", "Venice"],
+        maxItems: 3,
+    })
     @IsOptional()
     @IsArray()
     @MaxLength(3, { each: true })
     waypoints?: string[];
 
-    // 🎨 Theme (optional)
+    @ApiPropertyOptional({
+        enum: TripTheme,
+        example: TripTheme.SUMMER,
+    })
     @IsOptional()
     @IsEnum(TripTheme)
     theme?: TripTheme;
 
-    // 🚗 Transport
+    @ApiProperty({
+        enum: TransportType,
+        example: TransportType.CARAVAN,
+    })
     @IsEnum(TransportType)
     transport!: TransportType;
 }
