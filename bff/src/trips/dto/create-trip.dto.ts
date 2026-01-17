@@ -1,9 +1,10 @@
 ﻿import {
     IsArray,
+    IsDateString,
     IsEnum,
     IsOptional,
     IsString,
-    MaxLength,
+    ArrayMaxSize,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
@@ -14,9 +15,7 @@ import {
 
 export class CreateTripDto {
 
-    @ApiProperty({
-        example: "Summer Europe Roadtrip",
-    })
+    @ApiProperty({ example: "Summer Europe Roadtrip" })
     @IsString()
     name!: string;
 
@@ -31,25 +30,21 @@ export class CreateTripDto {
         example: "2026-07-01",
         description: "ISO date (YYYY-MM-DD)",
     })
-    @IsString()
+    @IsDateString()
     dateFrom!: string;
 
     @ApiProperty({
         example: "2026-07-14",
         description: "ISO date (YYYY-MM-DD)",
     })
-    @IsString()
+    @IsDateString()
     dateTo!: string;
 
-    @ApiProperty({
-        example: "Bratislava",
-    })
+    @ApiProperty({ example: "Bratislava" })
     @IsString()
     from!: string;
 
-    @ApiProperty({
-        example: "Barcelona",
-    })
+    @ApiProperty({ example: "Barcelona" })
     @IsString()
     to!: string;
 
@@ -59,7 +54,8 @@ export class CreateTripDto {
     })
     @IsOptional()
     @IsArray()
-    @MaxLength(3, { each: true })
+    @ArrayMaxSize(3)
+    @IsString({ each: true })
     waypoints?: string[];
 
     @ApiPropertyOptional({
