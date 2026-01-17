@@ -7,10 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
-
-// 🔥 DŮLEŽITÉ – musíš importovat LoginTicket
-import { OAuth2Client, LoginTicket } from 'google-auth-library';
-
+import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -50,7 +47,10 @@ export class AuthService {
             },
         });
 
-        return this.generateToken(user.id, user.email);
+        //return this.generateToken(user.id, user.email);
+        return {
+            accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
+        };
     }
 
     // ======================
@@ -95,17 +95,23 @@ export class AuthService {
             email: user.email
         });
 
-        return { access_token: token };
+        //return { access_token: token };
+        return {
+            accessToken: this.jwtService.sign({
+                sub: user.id,
+                email: user.email,
+            }),
+        };
     }
 
 
-    // ======================
-    // JWT TOKEN
-    // ======================
-    private generateToken(id: string, email: string) {
-        const payload = { sub: id, email };
-        return { access_token: this.jwtService.sign(payload) };
-    }
+    //// ======================
+    //// JWT TOKEN - SMAZAT
+    //// ======================
+    //private generateToken(id: string, email: string) {
+    //    const payload = { sub: id, email };
+    //    return { access_token: this.jwtService.sign(payload) };
+    //}
 
     // ======================
     // GOOGLE LOGIN
