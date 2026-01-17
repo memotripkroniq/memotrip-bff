@@ -26,9 +26,10 @@ export class AuthController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     @Get('me')
     async me(@Req() req: any) {
-        const userId = req.user.sub; // z JWT payloadu
+        const userId = req.user.id; // viz bod B níž
         return this.authService.getMe(userId);
     }
 
