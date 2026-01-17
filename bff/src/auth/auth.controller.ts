@@ -29,7 +29,7 @@ export class AuthController {
     @ApiBearerAuth('jwt')
     @Get('me')
     async me(@Req() req: any) {
-        const userId = req.user.id; // viz bod B níž
+        const userId = req.user.sub;
         return this.authService.getMe(userId);
     }
 
