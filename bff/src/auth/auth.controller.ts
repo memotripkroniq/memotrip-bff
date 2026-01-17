@@ -26,7 +26,7 @@ export class AuthController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
+    @ApiBearerAuth('jwt')
     @Get('me')
     async me(@Req() req: any) {
         const userId = req.user.id; // viz bod B níž
