@@ -3,6 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { TripMapService } from "./trip-map.service";
 import { createHash } from "crypto";
 import { LineString } from "geojson";
+import {CreateTripDto} from "./dto/create-trip.dto";
 
 /**
  * 🔄 ZMĚŇ PŘI ÚPRAVĚ VZHLEDU MAPY
@@ -120,6 +121,33 @@ export class TripsService {
         });
 
         return imageUrl;
+    }
+
+    // ─────────────────────────────
+    // ➕ CREATE TRIP
+    // ─────────────────────────────
+    async createTrip(ownerId: string, dto: CreateTripDto) {
+        const trip = await this.prisma.trips.create({
+            data: {
+                ownerId,
+                name: dto.name,
+                destination: dto.destination,
+                startDate: new Date(dto.dateFrom),
+                endDate: new Date(dto.dateTo),
+                from: dto.from,
+                to: dto.to,
+                waypoints: dto.waypoints ?? [],
+                theme: dto.theme ?? null,
+                transport: dto.transport,
+            },
+        });
+
+        // 🔁 minimální návratový kontrakt (zatím)
+        return {
+            id: trip.id,
+            name: trip.name,
+            createdAt: trip.createdAt,
+        };
     }
 
     // ─────────────────────────────

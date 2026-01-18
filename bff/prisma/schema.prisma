@@ -58,22 +58,22 @@ model Payment {
 }
 
 model User {
-  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String         @unique @db.VarChar(255)
-  passwordhash     String?        @db.VarChar(255)
-  name             String?        @db.VarChar(255)
-  country          String         @default("EN") @db.VarChar(255)
-  isPremium        Boolean        @default(false)
-  isKroniq         Boolean        @default(false)
-  createdAt        DateTime       @default(now()) @db.Timestamp(6)
-  provider         String?        @db.VarChar(50)
-  providerId       String?        @db.VarChar(255)
-  GroupMembers     GroupMembers[]
-  Groups           Groups[]
-  Notification     Notification[]
-  Order            Order[]
-  TripShares       TripShares[]
-  Trips            Trips[]
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  passwordhash String?        @db.VarChar(255)
+  name         String?        @db.VarChar(255)
+  country      String         @default("EN") @db.VarChar(255)
+  isPremium    Boolean        @default(false)
+  isKroniq     Boolean        @default(false)
+  createdAt    DateTime       @default(now()) @db.Timestamp(6)
+  provider     String?        @db.VarChar(50)
+  providerId   String?        @db.VarChar(255)
+  GroupMembers GroupMembers[]
+  Groups       Groups[]
+  Notification Notification[]
+  Order        Order[]
+  TripShares   TripShares[]
+  Trips        Trips[]
 }
 
 model GroupMembers {
@@ -99,7 +99,6 @@ model Themes {
   name        String    @db.VarChar
   description String?
   createdAt   DateTime? @default(now()) @db.Timestamp(6)
-  Trips       Trips[]
 }
 
 model TripShares {
@@ -113,29 +112,44 @@ model TripShares {
 }
 
 model Trips {
-  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ownerId     String       @db.Uuid
-  name        String       @db.VarChar
-  themeId     String?      @db.Uuid
-  description String?
-  startDate   DateTime?    @db.Date
-  endDate     DateTime?    @db.Date
-  createdAt   DateTime?    @default(now()) @db.Timestamp(6)
-  TripShares  TripShares[]
-  User        User         @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  Themes      Themes?      @relation(fields: [themeId], references: [id], onUpdate: NoAction)
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId String @db.Uuid
+
+  // Core
+  name        String @db.VarChar
+  destination String @db.VarChar // EUROPE | ASIA | ...
+  transport   String @db.VarChar // CAR | PLANE | ...
+
+  // Route
+  from      String   @db.VarChar
+  to        String   @db.VarChar
+  waypoints String[] @db.VarChar // max 3 – hlídá DTO
+
+  // Dates
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  // Optional
+  theme String? @db.VarChar // SUMMER | WINTER | ...
+
+  // Meta
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  // Relations
+  TripShares TripShares[]
+  User       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 }
 
 model TripMapCache {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cacheKey  String   @unique @db.VarChar(64)
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cacheKey String @unique @db.VarChar(64)
 
-  imageUrl  String   @db.VarChar(512)
+  imageUrl String @db.VarChar(512)
 
   // pro debug / dohledání
-  fromText  String?  @db.VarChar(255)
-  toText    String?  @db.VarChar(255)
-  transport String?  @db.VarChar(50)
+  fromText  String? @db.VarChar(255)
+  toText    String? @db.VarChar(255)
+  transport String? @db.VarChar(50)
 
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
