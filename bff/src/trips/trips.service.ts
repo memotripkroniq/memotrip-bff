@@ -129,16 +129,21 @@ export class TripsService {
     async createTrip(ownerId: string, dto: CreateTripDto) {
         const trip = await this.prisma.trips.create({
             data: {
-                ownerId,
                 name: dto.name,
                 destination: dto.destination,
                 transport: dto.transport,
                 from: dto.from,
                 to: dto.to,
                 waypoints: dto.waypoints ?? [],
+                theme: dto.theme ?? null,
                 startDate: new Date(dto.dateFrom),
                 endDate: new Date(dto.dateTo),
-                theme: dto.theme ?? null,
+
+                User: {
+                    connect: {
+                        id: ownerId,
+                    },
+                },
             },
         });
 

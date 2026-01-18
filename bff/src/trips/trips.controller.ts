@@ -22,7 +22,7 @@ export class TripsController {
         @Req() req,
         @Body() dto: CreateTripDto,
     ) {
-        return this.tripsService.createTrip(req.user.id, dto);
+        return this.tripsService.createTrip(req.user.sub, dto);
     }
 
     // ─────────────────────────────
@@ -31,6 +31,6 @@ export class TripsController {
     @UseGuards(JwtAuthGuard)
     @Get("my")
     async getMyTrips(@Req() req) {
-        return this.tripsService.getMyTrips(req.user.id);
+        return this.tripsService.getMyTrips(req.user.sub);
     }
 }
