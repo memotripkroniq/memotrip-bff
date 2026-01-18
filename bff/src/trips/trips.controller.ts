@@ -1,5 +1,5 @@
 import {Body, Controller, Get, Post, Req, UseGuards} from "@nestjs/common";
-import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import {ApiBearerAuth, ApiOperation, ApiTags} from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import {CreateTripDto} from "./dto/create-trip.dto";
@@ -17,14 +17,12 @@ export class TripsController {
     // ─────────────────────────────
     @UseGuards(JwtAuthGuard)
     @Post()
+    @ApiOperation({ summary: "Create new trip" })
     async createTrip(
         @Req() req,
         @Body() dto: CreateTripDto,
     ) {
-        return this.tripsService.createTrip(
-            req.user.id,
-            dto,
-        );
+        return this.tripsService.createTrip(req.user.id, dto);
     }
 
     // ─────────────────────────────
