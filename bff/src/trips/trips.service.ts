@@ -131,18 +131,11 @@ export class TripsService {
             data: {
                 ownerId,
                 name: dto.name,
-                destination: dto.destination,
                 startDate: new Date(dto.dateFrom),
                 endDate: new Date(dto.dateTo),
-                from: dto.from,
-                to: dto.to,
-                waypoints: dto.waypoints ?? [],
-                theme: dto.theme ?? null,
-                transport: dto.transport,
             },
         });
 
-        // 🔁 minimální návratový kontrakt (zatím)
         return {
             id: trip.id,
             name: trip.name,
