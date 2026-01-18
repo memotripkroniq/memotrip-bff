@@ -123,7 +123,7 @@ model Trips {
   // Route
   from      String   @db.VarChar
   to        String   @db.VarChar
-  waypoints String[] @default([]) @db.VarChar // max 3 – hlídá DTO
+  waypoints String[] @default([]) @db.Text // max 3 – hlídá DTO
 
   // Dates
   startDate DateTime @db.Date
