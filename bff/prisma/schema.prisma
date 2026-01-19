@@ -113,6 +113,7 @@ model TripShares {
 
 model Trips {
   id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  coverImageUrl String?
   ownerId String @db.Uuid
 
   // Core

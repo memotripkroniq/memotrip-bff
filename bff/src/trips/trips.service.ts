@@ -168,6 +168,7 @@ export class TripsService {
             select: {
                 id: true,
                 name: true,
+                coverImageUrl: true,
             },
         });
 
@@ -175,7 +176,7 @@ export class TripsService {
         return trips.map(trip => ({
             id: trip.id,
             title: trip.name,
-            coverImageUrl: null,
+            coverImageUrl: trip.coverImageUrl ?? null,
         }));
     }
 
