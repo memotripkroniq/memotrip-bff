@@ -5,6 +5,7 @@
     IsOptional,
     IsString,
     ArrayMaxSize,
+    IsUrl,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
@@ -72,4 +73,13 @@ export class CreateTripDto {
     })
     @IsEnum(TransportType)
     transport!: TransportType;
+
+    @ApiPropertyOptional({
+        example: "https://cdn.memotrip.app/trips/covers/abc123.jpg",
+        description: "Optional URL of uploaded cover image",
+    })
+    @IsOptional()
+    @IsString()
+        // @IsUrl()
+    coverImageUrl?: string;
 }

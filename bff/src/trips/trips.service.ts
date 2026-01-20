@@ -138,6 +138,7 @@ export class TripsService {
                 theme: dto.theme ?? null,
                 startDate: new Date(dto.dateFrom),
                 endDate: new Date(dto.dateTo),
+                coverImageUrl: dto.coverImageUrl ?? null,
 
                 User: {
                     connect: {
@@ -151,6 +152,7 @@ export class TripsService {
             id: trip.id,
             name: trip.name,
             createdAt: trip.createdAt,
+            coverImageUrl: dto.coverImageUrl ?? null,
         };
     }
 
