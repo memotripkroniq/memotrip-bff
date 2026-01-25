@@ -1,9 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { TripMapService } from "./trip-map.service";
-import { createHash } from "crypto";
+import {createHash, randomUUID} from "crypto";
 import { LineString } from "geojson";
 import {CreateTripDto} from "./dto/create-trip.dto";
+import path from "node:path";
+import * as fs from "fs/promises";
+import type { Express } from "express";
 
 /**
  * 🔄 ZMĚŇ PŘI ÚPRAVĚ VZHLEDU MAPY
@@ -19,6 +22,32 @@ export class TripsService {
         private readonly prisma: PrismaService,
         private readonly tripMapService: TripMapService,
     ) {}
+
+    // ─────────────────────────────
+    // ✅ COVER UPLOAD
+    // ─────────────────────────────
+    async uploadCoverImage(ownerId: string, file: Express.Multer.File): Promise<string> {
+        if (!file) throw new Error("No file provided");
+        if (!file.mimetype?.startsWith("image/")) throw new Error("Only image files are allowed");
+
+        const ext =
+            file.originalname?.split(".").pop()?.toLowerCase() ||
+            (file.mimetype === "image/png" ? "png" : "jpg");
+
+        const filename = `${ownerId}_${randomUUID()}.${ext}`;
+        const uploadsDir = path.join(process.cwd(), "uploads", "covers");
+
+        await fs.mkdir(uploadsDir, { recursive: true });
+
+        const fullPath = path.join(uploadsDir, filename);
+        await fs.writeFile(fullPath, file.buffer);
+
+        const base = process.env.PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "";
+        const url = `${base.replace(/\/$/, "")}/uploads/covers/${filename}`;
+
+        this.logger.log(`🖼️ cover uploaded: ${url}`);
+        return url;
+    }
 
     // ─────────────────────────────
     // 🔢 ROUND COORDINATES

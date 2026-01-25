@@ -1,11 +1,20 @@
-import {Body, Controller, Get, Post, Req, UseGuards} from "@nestjs/common";
-import {ApiBearerAuth, ApiOperation, ApiTags} from "@nestjs/swagger";
+import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import {CreateTripDto} from "./dto/create-trip.dto";
+import { CreateTripDto } from "./dto/create-trip.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { memoryStorage } from "multer";
+
+type UploadedImage = {
+    originalname: string;
+    mimetype: string;
+    buffer: Buffer;
+};
+
 
 @ApiTags("Trips")
-@ApiBearerAuth("jwt") // 👈 KLÍČOVÉ
+@ApiBearerAuth("jwt")
 @Controller("trips")
 export class TripsController {
     constructor(
@@ -32,5 +41,18 @@ export class TripsController {
     @Get("my")
     async getMyTrips(@Req() req) {
         return this.tripsService.getMyTrips(req.user.sub);
+    }
+
+    // ─────────────────────────────
+    // ✅ COVER UPLOAD
+    // ─────────────────────────────
+    @UseGuards(JwtAuthGuard)
+    @Post("cover")
+    @ApiOperation({ summary: "Upload trip cover image" })
+    @ApiConsumes("multipart/form-data")
+    @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
+    async uploadCover(@Req() req, @UploadedFile() file: Express.Multer.File) {
+        const url = await this.tripsService.uploadCoverImage(req.user.sub, file);
+        return { url };
     }
 }
