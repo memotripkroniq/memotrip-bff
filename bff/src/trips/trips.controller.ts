@@ -67,8 +67,8 @@ export class TripsController {
             throw new BadRequestException("Missing file field (multipart name must be 'file')");
         }
 
-        const url = await this.tripsService.uploadCoverImage(req.user.sub, file);
-        return { url };
+        const coverImageUrl = await this.tripsService.uploadCoverImage(req.user.sub, file);
+        return { coverImageUrl };
     }
 
 }
