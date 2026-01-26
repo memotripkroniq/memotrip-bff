@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException } from "@nestjs/common";
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CreateTripDto } from "./dto/create-trip.dto";
@@ -52,17 +52,23 @@ export class TripsController {
     @Post("cover")
     @ApiOperation({ summary: "Upload trip cover image" })
     @ApiConsumes("multipart/form-data")
+    @ApiBody({
+        schema: {
+            type: "object",
+            properties: {
+                file: { type: "string", format: "binary" },
+            },
+            required: ["file"],
+        },
+    })
     @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
-    async uploadCover(@Req() req, @UploadedFile() file: any) {
-        console.log("UPLOAD cover headers:", req.headers["content-type"]);
-        console.log("UPLOAD cover file:", file ? {
-            fieldname: file.fieldname,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-        } : null);
+    async uploadCover(@Req() req, @UploadedFile() file: Express.Multer.File) {
+        if (!file) {
+            throw new BadRequestException("Missing file field (multipart name must be 'file')");
+        }
 
         const url = await this.tripsService.uploadCoverImage(req.user.sub, file);
         return { url };
     }
+
 }
