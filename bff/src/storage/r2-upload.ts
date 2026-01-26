@@ -25,7 +25,35 @@ export async function uploadTripMap(
             ContentType: "image/png",
         })
     );
-
-    // ✅ TADY BYLA CHYBA – MUSÍ BÝT R2_PUBLIC_URL
+    
     return `${process.env.R2_PUBLIC_URL}/${fileName}`;
 }
+
+export async function uploadTripCover(
+    imageBuffer: Buffer,
+    ext: "jpg" | "jpeg" | "png" = "jpg"
+): Promise<string> {
+
+    if (!process.env.R2_BUCKET) {
+        throw new Error("R2_BUCKET is not defined");
+    }
+
+    if (!process.env.R2_PUBLIC_URL) {
+        throw new Error("R2_PUBLIC_URL is not defined");
+    }
+
+    const fileName = `covers/cover_${randomUUID()}.${ext}`;
+
+    await r2Client.send(
+        new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET,
+            Key: fileName,
+            Body: imageBuffer,
+            ContentType:
+                ext === "png" ? "image/png" : "image/jpeg",
+        })
+    );
+
+    return `${process.env.R2_PUBLIC_URL}/${fileName}`;
+}
+

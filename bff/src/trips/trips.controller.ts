@@ -5,6 +5,8 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CreateTripDto } from "./dto/create-trip.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
+import type { Express } from "express";
+
 
 type UploadedImage = {
     originalname: string;
@@ -51,7 +53,15 @@ export class TripsController {
     @ApiOperation({ summary: "Upload trip cover image" })
     @ApiConsumes("multipart/form-data")
     @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
-    async uploadCover(@Req() req, @UploadedFile() file: Express.Multer.File) {
+    async uploadCover(@Req() req, @UploadedFile() file: any) {
+        console.log("UPLOAD cover headers:", req.headers["content-type"]);
+        console.log("UPLOAD cover file:", file ? {
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+        } : null);
+
         const url = await this.tripsService.uploadCoverImage(req.user.sub, file);
         return { url };
     }

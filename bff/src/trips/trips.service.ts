@@ -6,6 +6,7 @@ import { LineString } from "geojson";
 import {CreateTripDto} from "./dto/create-trip.dto";
 import path from "node:path";
 import * as fs from "fs/promises";
+import { uploadTripCover } from "../storage/r2-upload";
 import type { Express } from "express";
 
 /**
@@ -24,28 +25,29 @@ export class TripsService {
     ) {}
 
     // ─────────────────────────────
-    // ✅ COVER UPLOAD
+    // ✅ COVER UPLOAD (R2)
     // ─────────────────────────────
     async uploadCoverImage(ownerId: string, file: Express.Multer.File): Promise<string> {
         if (!file) throw new Error("No file provided");
-        if (!file.mimetype?.startsWith("image/")) throw new Error("Only image files are allowed");
 
-        const ext =
+        if (!file.mimetype?.startsWith("image/")) {
+            throw new Error("Only image files are allowed");
+        }
+
+        const rawExt =
             file.originalname?.split(".").pop()?.toLowerCase() ||
             (file.mimetype === "image/png" ? "png" : "jpg");
 
-        const filename = `${ownerId}_${randomUUID()}.${ext}`;
-        const uploadsDir = path.join(process.cwd(), "uploads", "covers");
+        const ext: "jpg" | "jpeg" | "png" =
+            rawExt === "png" ? "png" :
+                rawExt === "jpeg" ? "jpeg" :
+                    "jpg";
 
-        await fs.mkdir(uploadsDir, { recursive: true });
 
-        const fullPath = path.join(uploadsDir, filename);
-        await fs.writeFile(fullPath, file.buffer);
+        // FileInterceptor(memoryStorage) => file.buffer je Buffer ✅
+        const url = await uploadTripCover(file.buffer, ext);
 
-        const base = process.env.PUBLIC_BASE_URL ?? process.env.BASE_URL ?? "";
-        const url = `${base.replace(/\/$/, "")}/uploads/covers/${filename}`;
-
-        this.logger.log(`🖼️ cover uploaded: ${url}`);
+        this.logger.log(`🖼️ cover uploaded (R2): ${url}`);
         return url;
     }
 

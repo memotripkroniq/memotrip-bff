@@ -1,7 +1,7 @@
 ﻿import { Inject, Injectable, Logger } from "@nestjs/common";
 import OpenAI from "openai";
 import { GenerateTripMapDto } from "./dto/generate-trip-map.dto";
-import { uploadTripMap } from "../storage/r2-upload";
+import { uploadTripMap, uploadTripCover } from "../storage/r2-upload";
 import { RenderTripMapDto } from "./dto/render-trip-map.dto";
 import { MapRenderService } from "./map-render.service";
 import { LineString } from "geojson";
@@ -19,10 +19,7 @@ export class TripMapService {
     // ─────────────────────────────
     // 🎨 AI MAP (OPENAI)
     // ─────────────────────────────
-    async generateTripMap(
-        dto: GenerateTripMapDto
-    ): Promise<{ imageUrl: string }> {
-
+    async generateTripMap(dto: GenerateTripMapDto): Promise<{ imageUrl: string }> {
         const prompt = this.buildPrompt(dto);
 
         try {
@@ -37,9 +34,9 @@ export class TripMapService {
                 throw new Error("OpenAI returned no image data");
             }
 
-            const imageUrl = await uploadTripMap(imageBase64);
+            // ✅ NECHÁNO: upload mapy zůstává přes uploadTripMap()
+            const imageUrl = await this.uploadMapBase64(imageBase64);
             return { imageUrl };
-
         } catch (err: any) {
             this.logger.error("Trip map generation failed", err?.message ?? err);
             throw err;
@@ -49,16 +46,30 @@ export class TripMapService {
     // ─────────────────────────────
     // 🗺️ MAP RENDER (OSM / ROUTE)
     // ─────────────────────────────
-    async renderTripMap(
-        dto: RenderTripMapDto,
-        route: LineString
-    ): Promise<{ imageUrl: string }> {
-
+    async renderTripMap(dto: RenderTripMapDto, route: LineString): Promise<{ imageUrl: string }> {
         const pngBuffer = await this.mapRender.renderToPng(route);
         const imageBase64 = pngBuffer.toString("base64");
-        const imageUrl = await uploadTripMap(imageBase64);
+
+        // ✅ NECHÁNO: upload mapy zůstává přes uploadTripMap()
+        const imageUrl = await this.uploadMapBase64(imageBase64);
+        return { imageUrl };
+    }
+
+    // ─────────────────────────────
+    // 🖼️ (VOLITELNÉ) COVER BASE64 UPLOAD DO R2
+    //  - nijak to nesouvisí s Android multipart endpointem
+    //  - jen připravené do budoucna
+    // ─────────────────────────────
+    async uploadCoverBase64(imageBase64: string, ext: "jpg" | "png" = "jpg"): Promise<{ imageUrl: string }> {
+        const buffer = Buffer.from(imageBase64, "base64");
+        const imageUrl = await uploadTripCover(buffer, ext);
 
         return { imageUrl };
+    }
+
+    // ✅ Helper – mapy pořád používají původní uploadTripMap()
+    private async uploadMapBase64(imageBase64: string): Promise<string> {
+        return uploadTripMap(imageBase64);
     }
 
     // ─────────────────────────────
@@ -91,6 +102,6 @@ Rules:
 Output:
 - flat illustration
 - centered composition
-        `.trim();
+    `.trim();
     }
 }
