@@ -7,6 +7,9 @@ import {CreateTripDto} from "./dto/create-trip.dto";
 import path from "node:path";
 import * as fs from "fs/promises";
 import { uploadTripCover } from "../storage/r2-upload";
+import { ForbiddenException } from "@nestjs/common";
+import { canCreateTrip } from "./tripLimits"; // uprav cestu podle toho, kde máš soubor
+
 import type { Express } from "express";
 
 /**
@@ -158,6 +161,21 @@ export class TripsService {
     // ➕ CREATE TRIP
     // ─────────────────────────────
     async createTrip(ownerId: string, dto: CreateTripDto) {
+        // 1) Limit check
+        const limit = await canCreateTrip(this.prisma, ownerId);
+
+        if (!limit.allowed) {
+            throw new ForbiddenException({
+                code: "TRIP_LIMIT_REACHED",
+                plan: limit.plan,
+                used: limit.used,
+                limit: limit.limit,
+                windowDays: limit.windowDays,
+                windowStart: limit.windowStart,
+            });
+        }
+
+        // 2) Create trip
         const trip = await this.prisma.trips.create({
             data: {
                 name: dto.name,
@@ -183,7 +201,7 @@ export class TripsService {
             id: trip.id,
             name: trip.name,
             createdAt: trip.createdAt,
-            coverImageUrl: dto.coverImageUrl ?? null,
+            coverImageUrl: trip.coverImageUrl, // (můžeš vracet z tripu, je to jistější než dto)
         };
     }
 
