@@ -31,4 +31,11 @@ export class AuthController {
     async me(@Req() req: any) {
         return this.authService.getMe(req.user.sub);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Get('limits/trips')
+    async tripLimits(@Req() req: any) {
+        return this.authService.getTripLimits(req.user.sub);
+    }
 }

@@ -262,6 +262,49 @@ export class AuthService {
         };
     }
 
+    // ======================
+    // GET TRIP LIMITS (CAN CREATE TRIP?)
+    // ======================
+    async getTripLimits(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { isPremium: true, isKroniq: true },
+        });
+
+        const plan = user?.isKroniq ? "KRONIQ" : user?.isPremium ? "PREMIUM" : "FREE";
+
+        const policy =
+            plan === "KRONIQ"
+                ? { limit: 30, windowDays: 365 }
+                : plan === "PREMIUM"
+                    ? { limit: 3, windowDays: 30 }
+                    : { limit: 1, windowDays: 90 };
+
+        const windowStart = new Date(
+            Date.now() - policy.windowDays * 24 * 60 * 60 * 1000
+        );
+
+        const used = await this.prisma.trips.count({
+            where: {
+                ownerId: userId,
+                createdAt: { gte: windowStart },
+            },
+        });
+
+        const allowed = used < policy.limit;
+
+        return {
+            allowed,
+            code: allowed ? null : "TRIP_LIMIT_REACHED",
+            plan,
+            used,
+            limit: policy.limit,
+            windowDays: policy.windowDays,
+            windowStart,
+        };
+    }
+
+
 
 
 }
