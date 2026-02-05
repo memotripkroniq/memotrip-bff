@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException, Param, NotFoundException } from "@nestjs/common";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -45,6 +45,17 @@ export class TripsController {
         return this.tripsService.getMyTrips(req.user.sub);
     }
 
+    // ─────────────────────────────
+    // 🔎 TRIP DETAIL
+    // ─────────────────────────────
+    @UseGuards(JwtAuthGuard)
+    @Get(":tripId")
+    async getTripDetail(@Req() req, @Param("tripId") tripId: string) {
+        const trip = await this.tripsService.getTripDetail(req.user.sub, tripId);
+        if (!trip) throw new NotFoundException("Trip not found");
+        return trip;
+    }
+    
     // ─────────────────────────────
     // ✅ COVER UPLOAD
     // ─────────────────────────────

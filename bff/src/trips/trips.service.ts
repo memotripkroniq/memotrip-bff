@@ -231,5 +231,16 @@ export class TripsService {
         }));
     }
 
+    async getTripDetail(ownerId: string, tripId: string) {
+        return this.prisma.trips.findFirst({
+            where: {
+                id: tripId,
+                ownerId: ownerId,
+            },
+            // zatím můžeš vrátit vše (nebo jen select)
+        });
+    }
+
+
 
 }
