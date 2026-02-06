@@ -80,6 +80,13 @@ export class CreateTripDto {
     })
     @IsOptional()
     @IsString()
-        // @IsUrl()
+    @IsUrl()
     coverImageUrl?: string;
+
+    @ApiProperty({
+        example: "https://cdn.memotrip.app/trips/maps/xyz987.webp",
+        description: "Required URL of generated map image",
+    })
+    @IsUrl()
+    mapImageUrl!: string;
 }

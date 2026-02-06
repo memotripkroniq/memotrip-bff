@@ -188,6 +188,7 @@ export class TripsService {
                 startDate: new Date(dto.dateFrom),
                 endDate: new Date(dto.dateTo),
                 coverImageUrl: dto.coverImageUrl ?? null,
+                mapImageUrl: dto.mapImageUrl ?? null,
 
                 User: {
                     connect: {
@@ -202,6 +203,7 @@ export class TripsService {
             name: trip.name,
             createdAt: trip.createdAt,
             coverImageUrl: trip.coverImageUrl, // (můžeš vracet z tripu, je to jistější než dto)
+            mapImageUrl: trip.mapImageUrl ?? null,
         };
     }
 
@@ -220,6 +222,7 @@ export class TripsService {
                 id: true,
                 name: true,
                 coverImageUrl: true,
+                mapImageUrl: true,
             },
         });
 
@@ -228,6 +231,7 @@ export class TripsService {
             id: trip.id,
             title: trip.name,
             coverImageUrl: trip.coverImageUrl ?? null,
+            mapImageUrl: trip.mapImageUrl ?? null,
         }));
     }
 
