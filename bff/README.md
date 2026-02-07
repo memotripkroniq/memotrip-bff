@@ -29,7 +29,7 @@ JWT_SECRET="local_secret"
 JWT_EXPIRES_IN="7d"
 ```
 
-## ☁️ Staging .env.staging (Railway)
+## ☁️ Railway (staging / production)
 ```bash
 DATABASE_URL="postgresql://postgres:<secret>@<railway-host>:5432/railway"
 JWT_SECRET="staging_secret"
@@ -38,18 +38,30 @@ JWT_EXPIRES_IN="7d"
 👍 .env.staging a .env.production nepatří do Gitu.
 
 # 🧬 Prisma – database commands
+
+✅ Běžný vývoj (nový sloupec / tabulka)
+1. Uprav schema.prisma
+2. Vytvoř migraci lokálně
 ```bash
-# apply local migrations
-$ npx prisma migrate dev --name init
+npx prisma migrate dev -n add_some_feature
+```
+3. Commitni:
+- schema.prisma
+- prisma/migrations/<timestamp>_add_some_feature/
 
-# push schema without migration (staging)
-$ npx prisma db push
+4. Push -> Railway deploy
+- Raiway automaticky spustí => npx prisma migrate deploy
 
-# regenerate client
-$ npx prisma generate
+# 🛠️ Ostatní Prisma příkazy
+```bash
+# regenerate Prisma client
+npx prisma generate
 
-# open visual DB studio
-$ npx prisma studio
+# open Prisma Studio
+npx prisma studio
+
+# validate schema
+npx prisma validate
 ```
 
 # 📡 API Endpoints
@@ -100,11 +112,6 @@ $ npx prisma studio
 BASE_URL = "http://10.0.2.2:3000/"
 ```
 
-## 🟧 WiFi (telefon v LAN)
-```grandle
-BASE_URL = "http://192.168.x.x:3000/"
-```
-
 ## 🟠 Staging (Railway cloud)
 ```grandle
 BASE_URL = "https://memotrip-bff-production.up.railway.app/"
@@ -116,19 +123,13 @@ BASE_URL = "https://api.memotrip.app/"
 ```
 
 # 🧳 Railway Deployment
+Railway má nastavený pre-deploy step:
 ```bash
-# login
-$ railway login
-
-
-# link project
-$ railway link
-
-# deploy
-$ railway up
-
-# cloud env vars
-$ railway open
+npx prisma migrate deploy
+```
+Start cmmand:
+```bash
+npm run start
 ```
 
 # 📁 Folder Structure
@@ -152,3 +153,6 @@ $ railway open
 .env.*
 !.env.example
 ```
+
+# 🧠 Shrnutí jednou větou
+Upravím schema.prisma → migrate dev lokálně → commit → Railway migrate deploy.
