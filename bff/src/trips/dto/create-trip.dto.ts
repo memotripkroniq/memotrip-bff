@@ -89,4 +89,14 @@ export class CreateTripDto {
     })
     @IsUrl()
     mapImageUrl!: string;
+
+    @ApiPropertyOptional({
+        example: "https://cdn.memotrip.app/trips/maps/xyz987_full.webp",
+        description: "Optional URL of full resolution generated map image (for zoom)",
+    })
+    @IsOptional()
+    @IsString()
+    @IsUrl()
+    mapImageFullUrl?: string;
+
 }

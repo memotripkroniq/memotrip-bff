@@ -6,7 +6,10 @@ import type { LineString } from "geojson";
 
 @Injectable()
 export class MapRenderService {
-    async renderToPng(route: LineString): Promise<Buffer> {
+    async renderToPng(
+        route: LineString,
+        opts?: { width?: number; height?: number }
+    ): Promise<Buffer> {
         // 1️⃣ Načti HTML šablonu
         const templatePath = join(
             process.cwd(),
@@ -21,7 +24,11 @@ export class MapRenderService {
         html = html
             .replace("__ROUTE_GEOJSON__", JSON.stringify(route))
             .replace("__MAP_PADDING__", "0.2"); // 20 % padding
-        
+
+        // ✅ NEW: umožníme měnit viewport (thumb/full)
+        const width = opts?.width ?? 1600;
+        const height = opts?.height ?? 900;
+
         // 3️⃣ Spusť Playwright (headless)
         const browser = await chromium.launch({
             headless: true,
@@ -29,7 +36,7 @@ export class MapRenderService {
         });
 
         const page = await browser.newPage({
-            viewport: { width: 1600, height: 900 },
+            viewport: { width, height },
             deviceScaleFactor: 3, // hezčí PNG
         });
 

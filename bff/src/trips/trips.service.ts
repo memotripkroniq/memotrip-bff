@@ -88,8 +88,8 @@ export class TripsService {
     }
 
     // ─────────────────────────────
-    // 🗺️ GENERATE / RENDER MAP
-    // ─────────────────────────────
+// 🗺️ GENERATE / RENDER MAP
+// ─────────────────────────────
     async generateTripMap(params: {
         fromText: string;
         toText: string;
@@ -97,7 +97,7 @@ export class TripsService {
         toPoint: { lat: number; lon: number };
         transport: string;
         route: LineString;
-    }): Promise<string> {
+    }): Promise<{ imageUrl: string; imageFullUrl: string }> {
 
         const {
             fromText,
@@ -124,13 +124,16 @@ export class TripsService {
 
         if (cached) {
             this.logger.log(`🟢 MAP CACHE HIT`);
-            return cached.imageUrl;
+            return {
+                imageUrl: cached.imageUrl,
+                imageFullUrl: cached.imageFullUrl ?? cached.imageUrl, // fallback pro staré cache záznamy
+            };
         }
 
         this.logger.log(`🔵 MAP CACHE MISS`);
 
         // 3️⃣ RENDER MAP (EXPENSIVE PART)
-        const { imageUrl } = await this.tripMapService.renderTripMap(
+        const { imageUrl, imageFullUrl } = await this.tripMapService.renderTripMap(
             {
                 segments: [
                     {
@@ -148,13 +151,14 @@ export class TripsService {
             data: {
                 cacheKey,
                 imageUrl,
+                imageFullUrl, // ✅ NEW
                 fromText,   // 🔍 jen pro debug / admin
                 toText,     // 🔍 jen pro debug / admin
                 transport,
             },
         });
 
-        return imageUrl;
+        return { imageUrl, imageFullUrl };
     }
 
     // ─────────────────────────────
@@ -189,6 +193,8 @@ export class TripsService {
                 endDate: new Date(dto.dateTo),
                 coverImageUrl: dto.coverImageUrl ?? null,
                 mapImageUrl: dto.mapImageUrl ?? null,
+                mapImageFullUrl: dto.mapImageFullUrl ?? null,
+
 
                 User: {
                     connect: {
@@ -204,6 +210,7 @@ export class TripsService {
             createdAt: trip.createdAt,
             coverImageUrl: trip.coverImageUrl, // (můžeš vracet z tripu, je to jistější než dto)
             mapImageUrl: trip.mapImageUrl ?? null,
+            mapImageFullUrl: trip.mapImageFullUrl ?? null,
         };
     }
 

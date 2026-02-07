@@ -46,13 +46,18 @@ export class TripMapService {
     // ─────────────────────────────
     // 🗺️ MAP RENDER (OSM / ROUTE)
     // ─────────────────────────────
-    async renderTripMap(dto: RenderTripMapDto, route: LineString): Promise<{ imageUrl: string }> {
-        const pngBuffer = await this.mapRender.renderToPng(route);
-        const imageBase64 = pngBuffer.toString("base64");
+    async renderTripMap(dto: RenderTripMapDto, route: LineString): Promise<{ imageUrl: string; imageFullUrl: string }> {
+        // thumb do hero
+        const thumbPngBuffer = await this.mapRender.renderToPng(route, { width: 1200, height: 700 });
+        const thumbBase64 = thumbPngBuffer.toString("base64");
+        const imageUrl = await this.uploadMapBase64(thumbBase64, { suffix: "_thumb" });
 
-        // ✅ NECHÁNO: upload mapy zůstává přes uploadTripMap()
-        const imageUrl = await this.uploadMapBase64(imageBase64);
-        return { imageUrl };
+        // full pro zoom
+        const fullPngBuffer = await this.mapRender.renderToPng(route, { width: 3600, height: 2100 });
+        const fullBase64 = fullPngBuffer.toString("base64");
+        const imageFullUrl = await this.uploadMapBase64(fullBase64, { suffix: "_full" });
+
+        return { imageUrl, imageFullUrl };
     }
 
     // ─────────────────────────────
@@ -68,7 +73,10 @@ export class TripMapService {
     }
 
     // ✅ Helper – mapy pořád používají původní uploadTripMap()
-    private async uploadMapBase64(imageBase64: string): Promise<string> {
+    private async uploadMapBase64(
+        imageBase64: string,
+        _opts?: { suffix?: string }
+    ): Promise<string> {
         return uploadTripMap(imageBase64);
     }
 
