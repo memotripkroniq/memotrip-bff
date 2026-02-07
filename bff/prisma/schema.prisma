@@ -148,6 +148,7 @@ model TripMapCache {
   cacheKey String @unique @db.VarChar(64)
 
   imageUrl String @db.VarChar(512)
+  imageFullUrl String? @db.VarChar(512)
 
   // pro debug / dohledání
   fromText  String? @db.VarChar(255)
