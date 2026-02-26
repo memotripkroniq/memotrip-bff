@@ -40,17 +40,28 @@ JWT_EXPIRES_IN="7d"
 # 🧬 Prisma – database commands
 
 ✅ Běžný vývoj (nový sloupec / tabulka)
-1. Uprav schema.prisma
-2. Vytvoř migraci lokálně
+
+Zásada:
+Lokálně generujeme migrace, produkční DB se mění pouze přes Railway deploy.
+1️⃣ Uprav databázový model
+
+- změň prisma/schema.prisma (přidání sloupce, tabulky, indexu, relace…)
+
+2️⃣ Vygeneruj migraci lokálně (proti lokální DB)
 ```bash
-npx prisma migrate dev -n add_some_feature
+npx prisma migrate dev --name add_some_feature
 ```
-3. Commitni:
-- schema.prisma
-- prisma/migrations/<timestamp>_add_some_feature/
+
+3. Commitni změny:
+```bash
+git add prisma/schema.prisma prisma/migrations
+git commit -m "DB: add some feature"
+git push
+```
 
 4. Push -> Railway deploy
 - Raiway automaticky spustí => npx prisma migrate deploy
+- migrace se aplikuje na produkční databázi
 
 # 🛠️ Ostatní Prisma příkazy
 ```bash

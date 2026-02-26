@@ -135,12 +135,21 @@ model Trips {
   // Optional
   theme String? @db.VarChar // SUMMER | WINTER | ...
 
+  // Budget
+  plannedBudget String?
+  spentBudget   String?
+  
   // Meta
   createdAt DateTime @default(now()) @db.Timestamp(6)
 
   // Relations
   TripShares TripShares[]
   User       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Trip detail content
+  TripChecklistItems TripChecklistItem[]
+  TripNotes          TripNote[]
+  TripTipsAndTrips   TripTipAndTrip[]
 }
 
 model TripMapCache {
@@ -157,4 +166,39 @@ model TripMapCache {
 
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
+}
+
+model TripChecklistItem {
+  id      String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tripId  String @db.Uuid
+  text    String @db.VarChar(1000)
+  checked Boolean @default(false)
+  order   Int     @default(0)
+
+  Trips Trips @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+model TripNote {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tripId String @db.Uuid
+  text   String @db.VarChar(5000)
+  order  Int    @default(0)
+
+  Trips Trips @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+model TripTipAndTrip {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tripId   String @db.Uuid
+  title    String @db.VarChar(2000)
+  imageUrl String? @db.VarChar(1024)
+  order    Int     @default(0)
+
+  Trips Trips @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
 }

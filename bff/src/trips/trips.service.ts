@@ -9,6 +9,7 @@ import * as fs from "fs/promises";
 import { uploadTripCover } from "../storage/r2-upload";
 import { ForbiddenException } from "@nestjs/common";
 import { canCreateTrip } from "./tripLimits"; // uprav cestu podle toho, kde máš soubor
+import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
 
 import type { Express } from "express";
 
@@ -244,12 +245,95 @@ export class TripsService {
 
     async getTripDetail(ownerId: string, tripId: string) {
         return this.prisma.trips.findFirst({
-            where: {
-                id: tripId,
-                ownerId: ownerId,
+            where: { id: tripId, ownerId },
+            include: {
+                TripChecklistItems: { orderBy: { order: "asc" } },
+                TripNotes: { orderBy: { order: "asc" } },
+                TripTipsAndTrips: { orderBy: { order: "asc" } },
             },
-            // zatím můžeš vrátit vše (nebo jen select)
         });
+    }
+
+    async updateTripDetail(ownerId: string, tripId: string, dto: UpdateTripDetailDto) {
+        // 1) auth check: trip musí patřit userovi
+        const existing = await this.prisma.trips.findFirst({
+            where: { id: tripId, ownerId },
+            select: { id: true },
+        });
+        if (!existing) return null;
+
+        await this.prisma.$transaction(async (tx) => {
+            // 2) update core fields + budget
+            await tx.trips.update({
+                where: { id: tripId },
+                data: {
+                    name: dto.name ?? undefined,
+                    destination: dto.destination ?? undefined,
+                    transport: dto.transport ?? undefined,
+                    from: dto.from ?? undefined,
+                    to: dto.to ?? undefined,
+                    waypoints: dto.waypoints ?? undefined,
+                    theme: dto.theme ?? undefined,
+                    coverImageUrl: dto.coverImageUrl ?? undefined,
+                    mapImageUrl: dto.mapImageUrl ?? undefined,
+                    mapImageFullUrl: dto.mapImageFullUrl ?? undefined,
+
+                    plannedBudget: dto.plannedBudget ?? undefined,
+                    spentBudget: dto.spentBudget ?? undefined,
+
+                    // pokud budeš chtít start/end date: parsuj string na Date
+                    // startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+                    // endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+                },
+            });
+
+            // 3) replace checklist
+            if (dto.checklistItems) {
+                await tx.tripChecklistItem.deleteMany({ where: { tripId } });
+                if (dto.checklistItems.length > 0) {
+                    await tx.tripChecklistItem.createMany({
+                        data: dto.checklistItems.map((i) => ({
+                            tripId,
+                            text: i.text,
+                            checked: i.checked,
+                            order: i.order,
+                        })),
+                    });
+                }
+            }
+
+            // 4) replace notes
+            if (dto.notes) {
+                await tx.tripNote.deleteMany({ where: { tripId } });
+                if (dto.notes.length > 0) {
+                    await tx.tripNote.createMany({
+                        data: dto.notes.map((n) => ({
+                            tripId,
+                            text: n.text,
+                            order: n.order,
+                        })),
+                    });
+                }
+            }
+
+            // 5) replace tips&trips
+            if (dto.tipsAndTrips) {
+                await tx.tripTipAndTrip.deleteMany({ where: { tripId } });
+                if (dto.tipsAndTrips.length > 0) {
+                    await tx.tripTipAndTrip.createMany({
+                        data: dto.tipsAndTrips.map((t) => ({
+                            tripId,
+                            title: t.title,
+                            imageUrl: t.imageUrl ?? null,
+                            order: t.order,
+                        })),
+                    });
+                }
+            }
+        });
+
+        // 6) return fresh detail
+        return this.getTripDetail(ownerId, tripId);
     }
 
 

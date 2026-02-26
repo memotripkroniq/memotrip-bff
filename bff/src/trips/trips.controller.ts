@@ -6,6 +6,8 @@ import { CreateTripDto } from "./dto/create-trip.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
 import type { Express } from "express";
+import { Patch } from "@nestjs/common";
+import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
 
 
 type UploadedImage = {
@@ -52,6 +54,19 @@ export class TripsController {
     @Get(":tripId")
     async getTripDetail(@Req() req, @Param("tripId") tripId: string) {
         const trip = await this.tripsService.getTripDetail(req.user.sub, tripId);
+        if (!trip) throw new NotFoundException("Trip not found");
+        return trip;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(":tripId")
+    @ApiOperation({ summary: "Update trip detail (budget, checklist, notes, tips)" })
+    async updateTripDetail(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Body() dto: UpdateTripDetailDto,
+    ) {
+        const trip = await this.tripsService.updateTripDetail(req.user.sub, tripId, dto);
         if (!trip) throw new NotFoundException("Trip not found");
         return trip;
     }
