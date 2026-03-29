@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException, Param, NotFoundException } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException, Param, NotFoundException, Delete } from "@nestjs/common";
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -69,6 +69,21 @@ export class TripsController {
         const trip = await this.tripsService.updateTripDetail(req.user.sub, tripId, dto);
         if (!trip) throw new NotFoundException("Trip not found");
         return trip;
+    }
+
+    // ─────────────────────────────
+    // ✅ DETELE TRIP
+    // ─────────────────────────────
+    @UseGuards(JwtAuthGuard)
+    @Delete(":tripId")
+    @ApiOperation({ summary: "Delete trip" })
+    async deleteTrip(
+        @Req() req,
+        @Param("tripId") tripId: string,
+    ) {
+        const result = await this.tripsService.deleteTrip(req.user.sub, tripId);
+        if (!result) throw new NotFoundException("Trip not found");
+        return result;
     }
     
     // ─────────────────────────────

@@ -336,6 +336,21 @@ export class TripsService {
         return this.getTripDetail(ownerId, tripId);
     }
 
+    async deleteTrip(ownerId: string, tripId: string) {
+        const existing = await this.prisma.trips.findFirst({
+            where: { id: tripId, ownerId },
+            select: { id: true },
+        });
+
+        if (!existing) return null;
+
+        await this.prisma.trips.delete({
+            where: { id: tripId },
+        });
+
+        return { success: true };
+    }
+
 
 
 }
