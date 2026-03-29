@@ -231,6 +231,7 @@ export class TripsService {
                 name: true,
                 coverImageUrl: true,
                 mapImageUrl: true,
+                theme: true,
             },
         });
 
@@ -240,6 +241,7 @@ export class TripsService {
             title: trip.name,
             coverImageUrl: trip.coverImageUrl ?? null,
             mapImageUrl: trip.mapImageUrl ?? null,
+            theme: trip.theme ?? null,
         }));
     }
 
