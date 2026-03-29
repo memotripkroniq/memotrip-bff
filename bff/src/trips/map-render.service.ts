@@ -35,10 +35,13 @@ export class MapRenderService {
             args: ["--no-sandbox"], // důležité pro Railway
         });
 
-        const page = await browser.newPage({
+        const context = await browser.newContext({
             viewport: { width, height },
-            deviceScaleFactor: 3, // hezčí PNG
+            deviceScaleFactor: 3,
+            userAgent: "MemoTrip-Kroniq-Dev/1.0 (development contact: memotripkroniq@gmail.com)",
         });
+
+        const page = await context.newPage();
 
         // 4️⃣ Nahraj HTML přímo z paměti
         await page.setContent(html, { waitUntil: "load" });
