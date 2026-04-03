@@ -285,8 +285,8 @@ export class TripsService {
             if ("spentBudget" in dto) tripData.spentBudget = dto.spentBudget;
 
             // ✅ nullable dates
-            if ("startDate" in dto) tripData.startDate = dto.startDate ? new Date(dto.startDate) : null;
-            if ("endDate" in dto) tripData.endDate = dto.endDate ? new Date(dto.endDate) : null;
+            if (dto.startDate !== undefined && dto.startDate !== null) { tripData.startDate = new Date(dto.startDate);}
+            if (dto.endDate !== undefined && dto.endDate !== null) { tripData.endDate = new Date(dto.endDate); }
 
             await tx.trips.update({
                 where: { id: tripId },
