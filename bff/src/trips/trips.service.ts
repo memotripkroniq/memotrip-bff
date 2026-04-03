@@ -266,27 +266,30 @@ export class TripsService {
 
         await this.prisma.$transaction(async (tx) => {
             // 2) update core fields + budget
+            const tripData: any = {};
+
+            if ("name" in dto) tripData.name = dto.name;
+            if ("destination" in dto) tripData.destination = dto.destination;
+            if ("transport" in dto) tripData.transport = dto.transport;
+            if ("from" in dto) tripData.from = dto.from;
+            if ("to" in dto) tripData.to = dto.to;
+            if ("waypoints" in dto) tripData.waypoints = dto.waypoints;
+            if ("theme" in dto) tripData.theme = dto.theme;
+
+            if ("coverImageUrl" in dto) tripData.coverImageUrl = dto.coverImageUrl;
+            if ("mapImageUrl" in dto) tripData.mapImageUrl = dto.mapImageUrl;
+            if ("mapImageFullUrl" in dto) tripData.mapImageFullUrl = dto.mapImageFullUrl;
+
+            if ("plannedBudget" in dto) tripData.plannedBudget = dto.plannedBudget;
+            if ("spentBudget" in dto) tripData.spentBudget = dto.spentBudget;
+
+            // pokud budeš chtít start/end date:
+            if ("startDate" in dto) tripData.startDate = dto.startDate ? new Date(dto.startDate) : null;
+            if ("endDate" in dto) tripData.endDate = dto.endDate ? new Date(dto.endDate) : null;
+
             await tx.trips.update({
                 where: { id: tripId },
-                data: {
-                    name: dto.name ?? undefined,
-                    destination: dto.destination ?? undefined,
-                    transport: dto.transport ?? undefined,
-                    from: dto.from ?? undefined,
-                    to: dto.to ?? undefined,
-                    waypoints: dto.waypoints ?? undefined,
-                    theme: dto.theme ?? undefined,
-                    coverImageUrl: dto.coverImageUrl ?? undefined,
-                    mapImageUrl: dto.mapImageUrl ?? undefined,
-                    mapImageFullUrl: dto.mapImageFullUrl ?? undefined,
-
-                    plannedBudget: dto.plannedBudget ?? undefined,
-                    spentBudget: dto.spentBudget ?? undefined,
-
-                    // pokud budeš chtít start/end date: parsuj string na Date
-                    // startDate: dto.startDate ? new Date(dto.startDate) : undefined,
-                    // endDate: dto.endDate ? new Date(dto.endDate) : undefined,
-                },
+                data: tripData,
             });
 
             // 3) replace checklist
