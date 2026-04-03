@@ -268,22 +268,23 @@ export class TripsService {
             // 2) update core fields + budget
             const tripData: any = {};
 
-            if ("name" in dto) tripData.name = dto.name;
-            if ("destination" in dto) tripData.destination = dto.destination;
-            if ("transport" in dto) tripData.transport = dto.transport;
-            if ("from" in dto) tripData.from = dto.from;
-            if ("to" in dto) tripData.to = dto.to;
-            if ("waypoints" in dto) tripData.waypoints = dto.waypoints;
-            if ("theme" in dto) tripData.theme = dto.theme;
+            // ✅ non-nullable fields -> null ignorovat
+            if (dto.name !== undefined && dto.name !== null) tripData.name = dto.name;
+            if (dto.destination !== undefined && dto.destination !== null) tripData.destination = dto.destination;
+            if (dto.transport !== undefined && dto.transport !== null) tripData.transport = dto.transport;
+            if (dto.from !== undefined && dto.from !== null) tripData.from = dto.from;
+            if (dto.to !== undefined && dto.to !== null) tripData.to = dto.to;
+            if (dto.waypoints !== undefined && dto.waypoints !== null) tripData.waypoints = dto.waypoints;
+            if (dto.theme !== undefined && dto.theme !== null) tripData.theme = dto.theme;
 
+            // ✅ nullable fields -> null propustit do DB
             if ("coverImageUrl" in dto) tripData.coverImageUrl = dto.coverImageUrl;
             if ("mapImageUrl" in dto) tripData.mapImageUrl = dto.mapImageUrl;
             if ("mapImageFullUrl" in dto) tripData.mapImageFullUrl = dto.mapImageFullUrl;
-
             if ("plannedBudget" in dto) tripData.plannedBudget = dto.plannedBudget;
             if ("spentBudget" in dto) tripData.spentBudget = dto.spentBudget;
 
-            // pokud budeš chtít start/end date:
+            // ✅ nullable dates
             if ("startDate" in dto) tripData.startDate = dto.startDate ? new Date(dto.startDate) : null;
             if ("endDate" in dto) tripData.endDate = dto.endDate ? new Date(dto.endDate) : null;
 
