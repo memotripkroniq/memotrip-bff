@@ -1,5 +1,6 @@
-import {Body, Controller, Get, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Patch, Post, Req, UseGuards} from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -30,6 +31,13 @@ export class AuthController {
     @Get('me')
     async me(@Req() req: any) {
         return this.authService.getMe(req.user.sub);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Patch('me')
+    async updateMe(@Req() req: any, @Body() body: UpdateMeDto) {
+        return this.authService.updateMe(req.user.sub, body);
     }
 
     @UseGuards(JwtAuthGuard)

@@ -62,6 +62,10 @@ model User {
   email        String         @unique @db.VarChar(255)
   passwordhash String?        @db.VarChar(255)
   name         String?        @db.VarChar(255)
+  firstName    String?        @db.VarChar(255)
+  lastName     String?        @db.VarChar(255)
+  gender       String?        @db.VarChar(50)
+  dateOfBirth  DateTime?      @db.Date
   country      String         @default("EN") @db.VarChar(255)
   isPremium    Boolean        @default(false)
   isKroniq     Boolean        @default(false)

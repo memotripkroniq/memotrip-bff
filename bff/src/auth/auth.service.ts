@@ -9,6 +9,7 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../users/users.service';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
 export class AuthService {
@@ -226,9 +227,7 @@ export class AuthService {
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
-
-
-
+    
 
     // ======================
     // GET ME (CURRENT USER)
@@ -242,6 +241,10 @@ export class AuthService {
                 id: true,
                 email: true,
                 name: true,
+                firstName: true,
+                lastName: true,
+                gender: true,
+                dateOfBirth: true,
                 isPremium: true,
                 isKroniq: true,
             },
@@ -257,9 +260,38 @@ export class AuthService {
             id: user.id,
             email: user.email,
             name: user.name,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            gender: user.gender,
+            dateOfBirth: user.dateOfBirth,
             isPremium: user.isPremium,
             isKroniq: user.isKroniq,
         };
+    }
+
+    // ======================
+    // UPDATE ME (CURRENT USER)
+    // ======================
+    async updateMe(userId: string, body: UpdateMeDto) {
+        const parsedDateOfBirth = body.dateOfBirth
+            ? (() => {
+                const [day, month, year] = body.dateOfBirth.split('/');
+                return new Date(Number(year), Number(month) - 1, Number(day));
+            })()
+            : undefined;
+
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                name: body.name,
+                firstName: body.firstName,
+                lastName: body.lastName,
+                gender: body.gender,
+                dateOfBirth: parsedDateOfBirth,
+            },
+        });
+
+        return this.getMe(userId);
     }
 
     // ======================
