@@ -1,14 +1,16 @@
 import {
-    Injectable,
     BadRequestException,
+    Injectable,
+    InternalServerErrorException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcryptjs';
-import { RegisterDto } from './dto/register.dto';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
-import { UsersService } from '../users/users.service';
+import * as bcrypt from 'bcryptjs';
+import type { Express } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
+import { deletePublicFile, uploadUserProfilePhoto } from '../storage/r2-upload';
+import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
@@ -17,17 +19,55 @@ export class AuthService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
     ) {
-        // Tady necháváme původní web client ID,
-        // audience můžeme override přímo v verifyIdToken
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
 
-    // ======================
-    // REGISTER
-    // ======================
+    private parseDateOnly(value: string): Date {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+        if (!match) {
+            throw new BadRequestException('dateOfBirth must be in YYYY-MM-DD format');
+        }
+
+        const [, yearText, monthText, dayText] = match;
+        const year = Number(yearText);
+        const month = Number(monthText);
+        const day = Number(dayText);
+
+        const parsed = new Date(Date.UTC(year, month - 1, day));
+        const isValid =
+            parsed.getUTCFullYear() === year &&
+            parsed.getUTCMonth() === month - 1 &&
+            parsed.getUTCDate() === day;
+
+        if (!isValid) {
+            throw new BadRequestException('dateOfBirth is not a valid calendar date');
+        }
+
+        return parsed;
+    }
+
+    private formatDateOnly(date: Date | null): string | null {
+        if (!date) {
+            return null;
+        }
+
+        return date.toISOString().slice(0, 10);
+    }
+
+    private resolveImageExtension(file: Express.Multer.File): 'jpg' | 'jpeg' | 'png' {
+        if (file.mimetype === 'image/png') {
+            return 'png';
+        }
+
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+            return 'jpeg';
+        }
+
+        throw new BadRequestException('Only PNG and JPEG images are allowed');
+    }
+
     async register(data: RegisterDto) {
         const { email, password } = data;
 
@@ -48,24 +88,18 @@ export class AuthService {
             },
         });
 
-        //return this.generateToken(user.id, user.email);
         return {
             accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
         };
     }
 
-    // ======================
-    // LOGIN
-    // ======================
     async login(email: string, password: string) {
         const cleanEmail = email.trim().toLowerCase();
 
-        // 1) Najdu uživatele
         const user = await this.prisma.user.findUnique({
             where: { email: cleanEmail }
         });
 
-        // 2) Email neexistuje
         if (!user) {
             throw new UnauthorizedException({
                 error: "EMAIL_NOT_FOUND",
@@ -73,7 +107,6 @@ export class AuthService {
             });
         }
 
-        // 3) Google-only účet (bez hesla)
         if (!user.passwordhash) {
             throw new UnauthorizedException({
                 error: "NO_PASSWORD_USE_GOOGLE",
@@ -81,7 +114,6 @@ export class AuthService {
             });
         }
 
-        // 4) Heslo je špatně
         const isValid = await bcrypt.compare(password, user.passwordhash);
         if (!isValid) {
             throw new UnauthorizedException({
@@ -90,13 +122,6 @@ export class AuthService {
             });
         }
 
-        // 5) OK – generujeme token
-        const token = this.jwtService.sign({
-            sub: user.id,
-            email: user.email
-        });
-
-        //return { access_token: token };
         return {
             accessToken: this.jwtService.sign({
                 sub: user.id,
@@ -105,25 +130,9 @@ export class AuthService {
         };
     }
 
-
-    //// ======================
-    //// JWT TOKEN - SMAZAT
-    //// ======================
-    //private generateToken(id: string, email: string) {
-    //    const payload = { sub: id, email };
-    //    return { access_token: this.jwtService.sign(payload) };
-    //}
-
-    // ======================
-    // GOOGLE LOGIN
-    // ======================
     async googleLogin(idToken: string) {
         try {
             console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
-
-            // =====================
-            // ENV DEBUG LOGY
-            // =====================
             console.log("🌍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
             console.log("🤖 GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
 
@@ -134,18 +143,14 @@ export class AuthService {
 
             console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
 
-            // ======================
-            // VERIFY TOKEN
-            // ======================
             const ticket = await this.googleClient.verifyIdToken({
                 idToken,
-                audience: undefined, // vypnuto pro debug
+                audience: undefined,
             });
 
             console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
 
-            // payload získáme TADY
-            // @ts-ignore — Google Auth má špatné typy
+            // @ts-ignore Google Auth library typing mismatch
             const payload = ticket.getPayload();
 
             console.log("🔍 PAYLOAD AZP:", payload?.azp);
@@ -155,13 +160,8 @@ export class AuthService {
                 process.env.GOOGLE_ANDROID_CLIENT_ID,
                 process.env.GOOGLE_CLIENT_ID
             );
-
             console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
 
-
-            // =====================
-            // VALIDACE
-            // =====================
             if (!payload) {
                 console.error("❌ NO PAYLOAD RETURNED FROM GOOGLE");
                 throw new UnauthorizedException("NO_PAYLOAD");
@@ -180,9 +180,6 @@ export class AuthService {
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
 
-            // =====================
-            // UŽIVATEL V DATABÁZI
-            // =====================
             console.log("🔎 Checking if user exists in DB…");
 
             let user = await this.prisma.user.findUnique({ where: { email } });
@@ -205,9 +202,6 @@ export class AuthService {
 
             console.log("🧪 DB User:", user);
 
-            // =====================
-            // GENERATE TOKENS
-            // =====================
             const accessToken = this.jwtService.sign(
                 { sub: user.id },
                 { expiresIn: "15m" }
@@ -221,26 +215,22 @@ export class AuthService {
             console.log("🎫 TOKENS CREATED OK");
 
             return { accessToken, refreshToken };
-
         } catch (e) {
             console.error("❌ GOOGLE LOGIN ERROR:", e);
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
-    
 
-    // ======================
-    // GET ME (CURRENT USER)
-    // ======================
     async getMe(userId: string) {
         console.log('🔍 GET ME userId:', userId);
-        
+
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
                 id: true,
                 email: true,
                 name: true,
+                profileImageUrl: true,
                 firstName: true,
                 lastName: true,
                 gender: true,
@@ -260,24 +250,19 @@ export class AuthService {
             id: user.id,
             email: user.email,
             name: user.name,
+            profileImageUrl: user.profileImageUrl,
             firstName: user.firstName,
             lastName: user.lastName,
             gender: user.gender,
-            dateOfBirth: user.dateOfBirth,
+            dateOfBirth: this.formatDateOnly(user.dateOfBirth),
             isPremium: user.isPremium,
             isKroniq: user.isKroniq,
         };
     }
 
-    // ======================
-    // UPDATE ME (CURRENT USER)
-    // ======================
     async updateMe(userId: string, body: UpdateMeDto) {
         const parsedDateOfBirth = body.dateOfBirth
-            ? (() => {
-                const [day, month, year] = body.dateOfBirth.split('/');
-                return new Date(Number(year), Number(month) - 1, Number(day));
-            })()
+            ? this.parseDateOnly(body.dateOfBirth)
             : undefined;
 
         await this.prisma.user.update({
@@ -294,9 +279,75 @@ export class AuthService {
         return this.getMe(userId);
     }
 
-    // ======================
-    // GET TRIP LIMITS (CAN CREATE TRIP?)
-    // ======================
+    async uploadProfilePhoto(userId: string, file: Express.Multer.File) {
+        if (!file) {
+            throw new BadRequestException("Missing file field (multipart name must be 'file')");
+        }
+
+        if (!file.mimetype?.startsWith('image/')) {
+            throw new BadRequestException('Only image files are allowed');
+        }
+
+        const currentUser = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { profileImageUrl: true },
+        });
+
+        if (!currentUser) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        const profileImageUrl = await uploadUserProfilePhoto(
+            file.buffer,
+            this.resolveImageExtension(file),
+        );
+
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { profileImageUrl },
+        });
+
+        if (currentUser.profileImageUrl) {
+            try {
+                await deletePublicFile(currentUser.profileImageUrl);
+            } catch (error) {
+                console.error('Failed to delete previous profile image:', error);
+            }
+        }
+
+        return { profileImageUrl };
+    }
+
+    async deleteProfilePhoto(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { profileImageUrl: true },
+        });
+
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        if (user.profileImageUrl) {
+            try {
+                await deletePublicFile(user.profileImageUrl);
+            } catch (error) {
+                console.error('Failed to delete profile image:', error);
+                throw new InternalServerErrorException('Failed to delete profile image from storage');
+            }
+        }
+
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { profileImageUrl: null },
+        });
+
+        return {
+            success: true,
+            profileImageUrl: null,
+        };
+    }
+
     async getTripLimits(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
@@ -335,8 +386,4 @@ export class AuthService {
             windowStart,
         };
     }
-
-
-
-
 }

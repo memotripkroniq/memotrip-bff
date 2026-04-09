@@ -1,5 +1,5 @@
-﻿import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, Matches } from 'class-validator';
 
 export class UpdateMeDto {
     @ApiPropertyOptional()
@@ -23,9 +23,13 @@ export class UpdateMeDto {
     lastName?: string;
 
     @ApiPropertyOptional({
-        example: '10/04/2024'
+        example: '1994-04-10',
+        description: 'Date-only format YYYY-MM-DD.',
     })
     @IsOptional()
     @IsString()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'dateOfBirth must be in YYYY-MM-DD format',
+    })
     dateOfBirth?: string;
 }
