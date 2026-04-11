@@ -22,6 +22,8 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AddKroniqGuestResponseDto } from './dto/add-kroniq-guest-response.dto';
+import { AddKroniqGuestDto } from './dto/add-kroniq-guest.dto';
 import { AddKroniqMemberResponseDto } from './dto/add-kroniq-member-response.dto';
 import { AddKroniqMemberDto } from './dto/add-kroniq-member.dto';
 import { DeleteKroniqImageResponseDto } from './dto/delete-kroniq-image-response.dto';
@@ -71,6 +73,15 @@ export class KroniqController {
     @ApiOkResponse({ type: AddKroniqMemberResponseDto })
     async addMember(@Req() req: any, @Body() body: AddKroniqMemberDto) {
         return this.kroniqService.addMember(req.user.sub, body);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Post('me/guests')
+    @ApiOperation({ summary: 'Add guest to current user KroniQ for 48 hours' })
+    @ApiOkResponse({ type: AddKroniqGuestResponseDto })
+    async addGuest(@Req() req: any, @Body() body: AddKroniqGuestDto) {
+        return this.kroniqService.addGuest(req.user.sub, body);
     }
 
     @UseGuards(JwtAuthGuard)

@@ -10,6 +10,7 @@ import {
 import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { deletePublicFile, uploadKroniqPhoto } from '../storage/r2-upload';
+import { AddKroniqGuestDto } from './dto/add-kroniq-guest.dto';
 import { AddKroniqMemberDto } from './dto/add-kroniq-member.dto';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class KroniqService {
 
     private mapMember(member: {
         role: string;
+        expiresAt: Date | null;
         User: {
             id: string;
             email: string;
@@ -31,7 +33,20 @@ export class KroniqService {
             name: member.User.name,
             role: member.role,
             profileImageUrl: member.User.profileImageUrl,
+            expiresAt: member.expiresAt?.toISOString() ?? null,
         };
+    }
+
+    private async cleanupExpiredGuests(groupId: string) {
+        await this.prisma.groupMembers.deleteMany({
+            where: {
+                groupId,
+                role: 'GUEST',
+                expiresAt: {
+                    lte: new Date(),
+                },
+            },
+        });
     }
 
     private async requireKroniqOwner(userId: string) {
@@ -207,6 +222,7 @@ export class KroniqService {
         }
 
         const groupId = await this.ensureOwnerGroup(ownerId);
+        await this.cleanupExpiredGuests(groupId);
 
         const existingMembership = await this.prisma.groupMembers.findUnique({
             where: {
@@ -249,9 +265,87 @@ export class KroniqService {
         };
     }
 
+    async addGuest(ownerId: string, dto: AddKroniqGuestDto) {
+        await this.requireKroniqOwner(ownerId);
+
+        const normalizedEmail = dto.email.trim().toLowerCase();
+        const guestUser = await this.prisma.user.findUnique({
+            where: { email: normalizedEmail },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                profileImageUrl: true,
+            },
+        });
+
+        if (!guestUser) {
+            throw new NotFoundException({
+                code: 'USER_NOT_FOUND',
+                message: 'User not found',
+            });
+        }
+
+        const groupId = await this.ensureOwnerGroup(ownerId);
+        await this.cleanupExpiredGuests(groupId);
+
+        const existingMembership = await this.prisma.groupMembers.findUnique({
+            where: {
+                userId_groupId: {
+                    userId: guestUser.id,
+                    groupId,
+                },
+            },
+            select: {
+                role: true,
+            },
+        });
+
+        if (existingMembership?.role === 'GUEST') {
+            throw new ConflictException({
+                code: 'ALREADY_GUEST',
+                message: 'User is already a guest',
+            });
+        }
+
+        if (existingMembership) {
+            throw new ConflictException({
+                code: 'ALREADY_MEMBER',
+                message: 'User is already a member',
+            });
+        }
+
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+        const createdGuest = await this.prisma.groupMembers.create({
+            data: {
+                userId: guestUser.id,
+                groupId,
+                role: 'GUEST',
+                expiresAt,
+            },
+            include: {
+                User: {
+                    select: {
+                        id: true,
+                        email: true,
+                        name: true,
+                        profileImageUrl: true,
+                    },
+                },
+            },
+        });
+
+        return {
+            success: true,
+            guest: this.mapMember(createdGuest),
+        };
+    }
+
     async removeMember(ownerId: string, memberId: string) {
         await this.requireKroniqOwner(ownerId);
         const groupId = await this.ensureOwnerGroup(ownerId);
+        await this.cleanupExpiredGuests(groupId);
 
         if (memberId === ownerId) {
             throw new ConflictException({
@@ -296,6 +390,7 @@ export class KroniqService {
     async getMe(ownerId: string) {
         const owner = await this.requireKroniqOwner(ownerId);
         const groupId = await this.ensureOwnerGroup(ownerId);
+        await this.cleanupExpiredGuests(groupId);
 
         const members = await this.prisma.groupMembers.findMany({
             where: { groupId },

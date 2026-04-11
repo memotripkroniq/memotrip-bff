@@ -15,4 +15,7 @@ export class KroniqMemberDto {
 
     @ApiPropertyOptional({ type: String, nullable: true })
     profileImageUrl: string | null;
+
+    @ApiPropertyOptional({ type: String, nullable: true })
+    expiresAt: string | null;
 }
