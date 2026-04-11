@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { deletePublicFile, uploadUserProfilePhoto } from '../storage/r2-upload';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 
@@ -235,6 +236,7 @@ export class AuthService {
                 lastName: true,
                 gender: true,
                 dateOfBirth: true,
+                passwordhash: true,
                 isPremium: true,
                 isKroniq: true,
             },
@@ -257,6 +259,7 @@ export class AuthService {
             dateOfBirth: this.formatDateOnly(user.dateOfBirth),
             isPremium: user.isPremium,
             isKroniq: user.isKroniq,
+            hasPassword: Boolean(user.passwordhash),
         };
     }
 
@@ -277,6 +280,63 @@ export class AuthService {
         });
 
         return this.getMe(userId);
+    }
+
+    async changePassword(userId: string, body: ChangePasswordDto) {
+        if (!body.newPassword) {
+            throw new BadRequestException('newPassword is required');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                passwordhash: true,
+            },
+        });
+
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        const hasPassword = Boolean(user.passwordhash);
+
+        if (hasPassword) {
+            if (!body.currentPassword) {
+                throw new BadRequestException('currentPassword is required');
+            }
+
+            const matchesCurrentPassword = await bcrypt.compare(
+                body.currentPassword,
+                user.passwordhash!,
+            );
+
+            if (!matchesCurrentPassword) {
+                throw new UnauthorizedException({
+                    error: 'WRONG_PASSWORD',
+                    message: 'Current password is incorrect',
+                });
+            }
+
+            const sameAsCurrent = await bcrypt.compare(body.newPassword, user.passwordhash!);
+            if (sameAsCurrent) {
+                throw new BadRequestException('New password must be different from current password');
+            }
+        }
+
+        const newPasswordHash = await bcrypt.hash(body.newPassword, 10);
+
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                passwordhash: newPasswordHash,
+            },
+        });
+
+        return {
+            success: true,
+            hasPassword: true,
+        };
     }
 
     async uploadProfilePhoto(userId: string, file: Express.Multer.File) {

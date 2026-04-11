@@ -22,6 +22,8 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { ChangePasswordResponseDto } from './dto/change-password-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteProfileImageResponseDto } from './dto/delete-profile-image-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { MeResponseDto } from './dto/me-response.dto';
@@ -66,6 +68,15 @@ export class AuthController {
     @ApiOkResponse({ type: MeResponseDto })
     async updateMe(@Req() req: any, @Body() body: UpdateMeDto) {
         return this.authService.updateMe(req.user.sub, body);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Post('me/password')
+    @ApiOperation({ summary: 'Create or change current user password' })
+    @ApiOkResponse({ type: ChangePasswordResponseDto })
+    async changePassword(@Req() req: any, @Body() body: ChangePasswordDto) {
+        return this.authService.changePassword(req.user.sub, body);
     }
 
     @UseGuards(JwtAuthGuard)

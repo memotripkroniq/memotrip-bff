@@ -35,4 +35,7 @@ export class MeResponseDto {
 
     @ApiProperty()
     isKroniq: boolean;
+
+    @ApiProperty()
+    hasPassword: boolean;
 }
