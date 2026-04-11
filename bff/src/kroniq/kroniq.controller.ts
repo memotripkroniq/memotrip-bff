@@ -1,6 +1,8 @@
 import {
+    Body,
     Controller,
     Delete,
+    Get,
     Post,
     Req,
     UploadedFile,
@@ -19,7 +21,10 @@ import {
     ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AddKroniqMemberResponseDto } from './dto/add-kroniq-member-response.dto';
+import { AddKroniqMemberDto } from './dto/add-kroniq-member.dto';
 import { DeleteKroniqImageResponseDto } from './dto/delete-kroniq-image-response.dto';
+import { KroniqMeResponseDto } from './dto/kroniq-me-response.dto';
 import { KroniqImageResponseDto } from './dto/kroniq-image-response.dto';
 import { KroniqService } from './kroniq.service';
 
@@ -27,6 +32,15 @@ import { KroniqService } from './kroniq.service';
 @Controller('kroniq')
 export class KroniqController {
     constructor(private readonly kroniqService: KroniqService) {}
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Get('me')
+    @ApiOperation({ summary: 'Get current user KroniQ data' })
+    @ApiOkResponse({ type: KroniqMeResponseDto })
+    async getMe(@Req() req: any) {
+        return this.kroniqService.getMe(req.user.sub);
+    }
 
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth('jwt')
@@ -46,6 +60,15 @@ export class KroniqController {
     @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
     async uploadPhoto(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
         return this.kroniqService.uploadPhoto(req.user.sub, file);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Post('me/members')
+    @ApiOperation({ summary: 'Add member to current user KroniQ' })
+    @ApiOkResponse({ type: AddKroniqMemberResponseDto })
+    async addMember(@Req() req: any, @Body() body: AddKroniqMemberDto) {
+        return this.kroniqService.addMember(req.user.sub, body);
     }
 
     @UseGuards(JwtAuthGuard)
