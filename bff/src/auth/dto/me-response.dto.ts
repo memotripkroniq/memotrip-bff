@@ -30,6 +30,9 @@ export class MeResponseDto {
     @ApiPropertyOptional({ type: String, nullable: true })
     profileImageUrl: string | null;
 
+    @ApiPropertyOptional({ type: String, nullable: true })
+    kroniqImageUrl: string | null;
+
     @ApiProperty()
     isPremium: boolean;
 

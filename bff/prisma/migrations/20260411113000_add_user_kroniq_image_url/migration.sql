@@ -1,0 +1,2 @@
+ALTER TABLE "User"
+ADD COLUMN "kroniqImageUrl" VARCHAR(1024);
