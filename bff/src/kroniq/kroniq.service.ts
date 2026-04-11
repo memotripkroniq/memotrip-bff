@@ -249,6 +249,50 @@ export class KroniqService {
         };
     }
 
+    async removeMember(ownerId: string, memberId: string) {
+        await this.requireKroniqOwner(ownerId);
+        const groupId = await this.ensureOwnerGroup(ownerId);
+
+        if (memberId === ownerId) {
+            throw new ConflictException({
+                code: 'CANNOT_REMOVE_SELF',
+                message: 'Cannot remove self',
+            });
+        }
+
+        const existingMembership = await this.prisma.groupMembers.findUnique({
+            where: {
+                userId_groupId: {
+                    userId: memberId,
+                    groupId,
+                },
+            },
+            select: {
+                userId: true,
+            },
+        });
+
+        if (!existingMembership) {
+            throw new NotFoundException({
+                code: 'MEMBER_NOT_FOUND',
+                message: 'Member not found',
+            });
+        }
+
+        await this.prisma.groupMembers.delete({
+            where: {
+                userId_groupId: {
+                    userId: memberId,
+                    groupId,
+                },
+            },
+        });
+
+        return {
+            success: true,
+        };
+    }
+
     async getMe(ownerId: string) {
         const owner = await this.requireKroniqOwner(ownerId);
         const groupId = await this.ensureOwnerGroup(ownerId);

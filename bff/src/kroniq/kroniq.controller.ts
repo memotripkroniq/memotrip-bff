@@ -3,6 +3,7 @@ import {
     Controller,
     Delete,
     Get,
+    Param,
     Post,
     Req,
     UploadedFile,
@@ -26,6 +27,7 @@ import { AddKroniqMemberDto } from './dto/add-kroniq-member.dto';
 import { DeleteKroniqImageResponseDto } from './dto/delete-kroniq-image-response.dto';
 import { KroniqMeResponseDto } from './dto/kroniq-me-response.dto';
 import { KroniqImageResponseDto } from './dto/kroniq-image-response.dto';
+import { RemoveKroniqMemberResponseDto } from './dto/remove-kroniq-member-response.dto';
 import { KroniqService } from './kroniq.service';
 
 @ApiTags('Kroniq')
@@ -69,6 +71,15 @@ export class KroniqController {
     @ApiOkResponse({ type: AddKroniqMemberResponseDto })
     async addMember(@Req() req: any, @Body() body: AddKroniqMemberDto) {
         return this.kroniqService.addMember(req.user.sub, body);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Delete('me/members/:memberId')
+    @ApiOperation({ summary: 'Remove member from current user KroniQ' })
+    @ApiOkResponse({ type: RemoveKroniqMemberResponseDto })
+    async removeMember(@Req() req: any, @Param('memberId') memberId: string) {
+        return this.kroniqService.removeMember(req.user.sub, memberId);
     }
 
     @UseGuards(JwtAuthGuard)
