@@ -1,15 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <title>MemoTrip – Trip Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Leaflet CSS -->
     <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            crossorigin=""
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        crossorigin=""
     />
 
     <style>
@@ -28,24 +27,22 @@
             height: 100%;
         }
 
-        /* 🌍 SVĚTLEJŠÍ, ČITELNÁ MAPA */
         .leaflet-tile {
             filter:
-                    brightness(1.08)
-                    contrast(1.02)
-                    saturate(1.08);
+                brightness(1.08)
+                contrast(1.02)
+                saturate(1.08);
         }
 
-        /* jemná viněta – už jen kosmetika */
         #map::after {
             content: "";
             position: absolute;
             inset: 0;
             pointer-events: none;
             background: radial-gradient(
-                    ellipse at center,
-                    rgba(0,0,0,0) 65%,
-                    rgba(0,0,0,0.18) 100%
+                ellipse at center,
+                rgba(0, 0, 0, 0) 65%,
+                rgba(0, 0, 0, 0.18) 100%
             );
             z-index: 500;
         }
@@ -56,70 +53,150 @@
 <div id="map"></div>
 
 <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        crossorigin=""
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
 ></script>
 
 <script>
-    const routeGeoJson = __ROUTE_GEOJSON__;
+    window.__MAP_RENDER_STATE__ = {
+        ready: false,
+        reason: null,
+        error: null,
+        tileLoadCount: 0,
+        tileErrorCount: 0,
+        routePathCount: 0,
+    };
 
-    const latLngs = routeGeoJson.coordinates.map(c => [c[1], c[0]]);
-    const start = latLngs[0];
-    const end   = latLngs[latLngs.length - 1];
+    function updateRenderState(patch) {
+        window.__MAP_RENDER_STATE__ = {
+            ...window.__MAP_RENDER_STATE__,
+            ...patch,
+        };
+        console.log("MAP_RENDER_STATE", JSON.stringify(window.__MAP_RENDER_STATE__));
+    }
 
-    const map = L.map("map", {
-        zoomControl: false,
-        attributionControl: false,
-        fadeAnimation: false,
-        inertia: false
-    });
+    function markReady(reason) {
+        if (window.__MAP_RENDER_STATE__.ready) {
+            return;
+        }
 
-    /* 🌍 SVĚTLÉ OSM TILES */
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18
-    }).addTo(map);
+        updateRenderState({ ready: true, reason });
+    }
 
-    /* ✨ glow pod trasou */
-    L.polyline(latLngs, {
-        color: "#4da3ff",
-        weight: 12,
-        opacity: 0.18,
-        lineCap: "round",
-        lineJoin: "round"
-    }).addTo(map);
+    try {
+        const routeGeoJson = __ROUTE_GEOJSON__;
+        const latLngs = routeGeoJson.coordinates.map((c) => [c[1], c[0]]);
+        const start = latLngs[0];
+        const end = latLngs[latLngs.length - 1];
 
-    /* 🚗 hlavní trasa */
-    const routeLayer = L.polyline(latLngs, {
-        color: "#4da3ff",
-        weight: 5,
-        opacity: 0.95,
-        lineCap: "round",
-        lineJoin: "round"
-    }).addTo(map);
+        const map = L.map("map", {
+            zoomControl: false,
+            attributionControl: false,
+            fadeAnimation: false,
+            inertia: false,
+        });
 
-    /* 🟢 START – výrazný */
-    L.circleMarker(start, {
-        radius: 9,
-        color: "#ffffff",
-        weight: 3,
-        fillColor: "#2ecc71",
-        fillOpacity: 1
-    }).addTo(map);
+        const tileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 18,
+        });
+        tileLayer.addTo(map);
 
-    /* 🔴 END – výrazný */
-    L.circleMarker(end, {
-        radius: 9,
-        color: "#ffffff",
-        weight: 3,
-        fillColor: "#e74c3c",
-        fillOpacity: 1
-    }).addTo(map);
+        tileLayer.on("tileload", () => {
+            updateRenderState({
+                tileLoadCount: window.__MAP_RENDER_STATE__.tileLoadCount + 1,
+            });
+        });
 
-    /* 📐 framing */
-    const bounds = routeLayer.getBounds();
-    const paddedBounds = bounds.pad(0.16);
+        tileLayer.on("tileerror", () => {
+            updateRenderState({
+                tileErrorCount: window.__MAP_RENDER_STATE__.tileErrorCount + 1,
+            });
+        });
 
-    map.fitBounds(paddedBounds, { animate: false });
+        L.polyline(latLngs, {
+            color: "#4da3ff",
+            weight: 12,
+            opacity: 0.18,
+            lineCap: "round",
+            lineJoin: "round",
+        }).addTo(map);
+
+        const routeLayer = L.polyline(latLngs, {
+            color: "#4da3ff",
+            weight: 5,
+            opacity: 0.95,
+            lineCap: "round",
+            lineJoin: "round",
+        }).addTo(map);
+
+        L.circleMarker(start, {
+            radius: 9,
+            color: "#ffffff",
+            weight: 3,
+            fillColor: "#2ecc71",
+            fillOpacity: 1,
+        }).addTo(map);
+
+        L.circleMarker(end, {
+            radius: 9,
+            color: "#ffffff",
+            weight: 3,
+            fillColor: "#e74c3c",
+            fillOpacity: 1,
+        }).addTo(map);
+
+        const bounds = routeLayer.getBounds();
+        const paddedBounds = bounds.pad(0.16);
+
+        map.whenReady(() => {
+            updateRenderState({
+                routePathCount: document.querySelectorAll(".leaflet-overlay-pane svg path").length,
+            });
+        });
+
+        map.on("moveend", () => {
+            updateRenderState({
+                routePathCount: document.querySelectorAll(".leaflet-overlay-pane svg path").length,
+            });
+
+            window.setTimeout(() => {
+                const loadedTiles = document.querySelectorAll(".leaflet-tile-loaded").length;
+                const routePathCount = document.querySelectorAll(".leaflet-overlay-pane svg path").length;
+
+                updateRenderState({
+                    tileLoadCount: Math.max(window.__MAP_RENDER_STATE__.tileLoadCount, loadedTiles),
+                    routePathCount,
+                });
+
+                if (routePathCount > 0 && (loadedTiles > 0 || window.__MAP_RENDER_STATE__.tileErrorCount > 0)) {
+                    markReady("map-moveend");
+                }
+            }, 1200);
+        });
+
+        map.fitBounds(paddedBounds, { animate: false });
+
+        window.setTimeout(() => {
+            const routePathCount = document.querySelectorAll(".leaflet-overlay-pane svg path").length;
+            const loadedTiles = document.querySelectorAll(".leaflet-tile-loaded").length;
+
+            updateRenderState({
+                tileLoadCount: Math.max(window.__MAP_RENDER_STATE__.tileLoadCount, loadedTiles),
+                routePathCount,
+            });
+
+            if (routePathCount > 0) {
+                markReady("timeout-fallback");
+            }
+        }, 8000);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        updateRenderState({
+            error: message,
+        });
+        console.error("MAP_RENDER_TEMPLATE_ERROR", message);
+        throw error;
+    }
 </script>
 
 </body>
