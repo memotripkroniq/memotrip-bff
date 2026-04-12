@@ -156,6 +156,8 @@ model Trips {
   // Trip detail content
   TripChecklistItems TripChecklistItem[]
   TripNotes          TripNote[]
+  TripPhotoCategories TripPhotoCategory[]
+  TripPhotos         TripPhoto[]
   TripTipsAndTrips   TripTipAndTrip[]
 }
 
@@ -208,4 +210,33 @@ model TripTipAndTrip {
   Trips Trips @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@index([tripId])
+}
+
+model TripPhotoCategory {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tripId    String   @db.Uuid
+  name      String   @db.VarChar(255)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  Trips      Trips       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  TripPhotos TripPhoto[]
+
+  @@index([tripId])
+}
+
+model TripPhoto {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tripId       String   @db.Uuid
+  categoryId   String   @db.Uuid
+  imageUrl     String   @db.VarChar(1024)
+  thumbnailUrl String   @db.VarChar(1024)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+
+  Trips             Trips             @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  TripPhotoCategory TripPhotoCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([tripId])
+  @@index([categoryId])
 }

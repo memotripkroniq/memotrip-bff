@@ -1,15 +1,16 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { TripMapService } from "./trip-map.service";
-import {createHash, randomUUID} from "crypto";
+import { createHash } from "crypto";
 import { LineString } from "geojson";
-import {CreateTripDto} from "./dto/create-trip.dto";
-import path from "node:path";
-import * as fs from "fs/promises";
-import { uploadTripCover } from "../storage/r2-upload";
+import { CreateTripDto } from "./dto/create-trip.dto";
+import { deletePublicFile, uploadTripCover, uploadTripGalleryPhoto } from "../storage/r2-upload";
 import { ForbiddenException } from "@nestjs/common";
 import { canCreateTrip } from "./tripLimits"; // uprav cestu podle toho, kde máš soubor
 import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
+import { CreateTripPhotoCategoryDto } from "./dto/create-trip-photo-category.dto";
+import { UpdateTripPhotoCategoryDto } from "./dto/update-trip-photo-category.dto";
+import { UpdateTripPhotoDto } from "./dto/update-trip-photo.dto";
 
 import type { Express } from "express";
 
@@ -18,6 +19,7 @@ import type { Express } from "express";
  * (styl, barvy, renderer, zoom, atd.)
  */
 const MAP_RENDER_VERSION = "v1";
+const DEFAULT_TRIP_PHOTO_CATEGORY_NAME = "Uncategorized";
 
 @Injectable()
 export class TripsService {
@@ -38,14 +40,7 @@ export class TripsService {
             throw new Error("Only image files are allowed");
         }
 
-        const rawExt =
-            file.originalname?.split(".").pop()?.toLowerCase() ||
-            (file.mimetype === "image/png" ? "png" : "jpg");
-
-        const ext: "jpg" | "jpeg" | "png" =
-            rawExt === "png" ? "png" :
-                rawExt === "jpeg" ? "jpeg" :
-                    "jpg";
+        const ext = this.resolveImageExtension(file);
 
 
         // FileInterceptor(memoryStorage) => file.buffer je Buffer ✅
@@ -53,6 +48,85 @@ export class TripsService {
 
         this.logger.log(`🖼️ cover uploaded (R2): ${url}`);
         return url;
+    }
+
+    private resolveImageExtension(file: Express.Multer.File): "jpg" | "jpeg" | "png" {
+        const rawExt =
+            file.originalname?.split(".").pop()?.toLowerCase() ||
+            (file.mimetype === "image/png" ? "png" : "jpg");
+
+        if (rawExt === "png") return "png";
+        if (rawExt === "jpeg") return "jpeg";
+        return "jpg";
+    }
+
+    private async assertTripOwner(ownerId: string, tripId: string): Promise<void> {
+        const trip = await this.prisma.trips.findFirst({
+            where: { id: tripId, ownerId },
+            select: { id: true },
+        });
+
+        if (!trip) {
+            throw new NotFoundException("Trip not found");
+        }
+    }
+
+    private async ensureDefaultPhotoCategory(tripId: string) {
+        const existing = await this.prisma.tripPhotoCategory.findFirst({
+            where: { tripId, isDefault: true },
+        });
+
+        if (existing) {
+            return existing;
+        }
+
+        return this.prisma.tripPhotoCategory.create({
+            data: {
+                tripId,
+                name: DEFAULT_TRIP_PHOTO_CATEGORY_NAME,
+                isDefault: true,
+            },
+        });
+    }
+
+    private mapPhotoCategory(category: { id: string; name: string }) {
+        return {
+            id: category.id,
+            name: category.name,
+        };
+    }
+
+    private mapTripPhoto(photo: {
+        id: string;
+        imageUrl: string;
+        thumbnailUrl: string;
+        categoryId: string;
+        order: number;
+        createdAt: Date;
+    }) {
+        return {
+            id: photo.id,
+            imageUrl: photo.imageUrl,
+            thumbnailUrl: photo.thumbnailUrl,
+            categoryId: photo.categoryId,
+            order: photo.order,
+            createdAt: photo.createdAt.toISOString(),
+        };
+    }
+
+    private async getTripPhotoCategoryOrThrow(tripId: string, categoryId: string) {
+        const category = await this.prisma.tripPhotoCategory.findFirst({
+            where: {
+                id: categoryId,
+                tripId,
+            },
+        });
+
+        if (!category) {
+            throw new NotFoundException("Photo category not found");
+        }
+
+        return category;
     }
 
     // ─────────────────────────────
@@ -353,6 +427,196 @@ export class TripsService {
         await this.prisma.trips.delete({
             where: { id: tripId },
         });
+
+        return { success: true };
+    }
+
+    async getTripPhotos(ownerId: string, tripId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+        await this.ensureDefaultPhotoCategory(tripId);
+
+        const [categories, photos] = await this.prisma.$transaction([
+            this.prisma.tripPhotoCategory.findMany({
+                where: { tripId },
+                orderBy: [
+                    { isDefault: "desc" },
+                    { createdAt: "asc" },
+                ],
+            }),
+            this.prisma.tripPhoto.findMany({
+                where: { tripId },
+                orderBy: [
+                    { order: "asc" },
+                    { createdAt: "asc" },
+                ],
+            }),
+        ]);
+
+        return {
+            categories: categories.map((category) => this.mapPhotoCategory(category)),
+            photos: photos.map((photo) => this.mapTripPhoto(photo)),
+        };
+    }
+
+    async uploadTripPhoto(ownerId: string, tripId: string, file: Express.Multer.File, categoryId?: string) {
+        await this.assertTripOwner(ownerId, tripId);
+
+        if (!file) {
+            throw new BadRequestException("No file provided");
+        }
+
+        if (!file.mimetype?.startsWith("image/")) {
+            throw new BadRequestException("Only image files are allowed");
+        }
+
+        const category = categoryId
+            ? await this.getTripPhotoCategoryOrThrow(tripId, categoryId)
+            : await this.ensureDefaultPhotoCategory(tripId);
+
+        const ext = this.resolveImageExtension(file);
+        const { imageUrl, thumbnailUrl } = await uploadTripGalleryPhoto(tripId, file.buffer, ext);
+
+        const orderAggregate = await this.prisma.tripPhoto.aggregate({
+            where: { tripId },
+            _max: { order: true },
+        });
+
+        const photo = await this.prisma.tripPhoto.create({
+            data: {
+                tripId,
+                categoryId: category.id,
+                imageUrl,
+                thumbnailUrl,
+                order: (orderAggregate._max.order ?? -1) + 1,
+            },
+        });
+
+        return {
+            photo: this.mapTripPhoto(photo),
+        };
+    }
+
+    async createTripPhotoCategory(ownerId: string, tripId: string, dto: CreateTripPhotoCategoryDto) {
+        await this.assertTripOwner(ownerId, tripId);
+        await this.ensureDefaultPhotoCategory(tripId);
+
+        const category = await this.prisma.tripPhotoCategory.create({
+            data: {
+                tripId,
+                name: dto.name.trim(),
+                isDefault: false,
+            },
+        });
+
+        return {
+            category: this.mapPhotoCategory(category),
+        };
+    }
+
+    async renameTripPhotoCategory(ownerId: string, tripId: string, categoryId: string, dto: UpdateTripPhotoCategoryDto) {
+        await this.assertTripOwner(ownerId, tripId);
+
+        const category = await this.getTripPhotoCategoryOrThrow(tripId, categoryId);
+        if (category.isDefault) {
+            throw new BadRequestException("Default category cannot be renamed");
+        }
+
+        const updated = await this.prisma.tripPhotoCategory.update({
+            where: { id: categoryId },
+            data: {
+                name: dto.name.trim(),
+            },
+        });
+
+        return {
+            category: this.mapPhotoCategory(updated),
+        };
+    }
+
+    async deleteTripPhotoCategory(ownerId: string, tripId: string, categoryId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+
+        const category = await this.getTripPhotoCategoryOrThrow(tripId, categoryId);
+        if (category.isDefault) {
+            throw new BadRequestException("Default category cannot be deleted");
+        }
+
+        const defaultCategory = await this.ensureDefaultPhotoCategory(tripId);
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.tripPhoto.updateMany({
+                where: {
+                    tripId,
+                    categoryId,
+                },
+                data: {
+                    categoryId: defaultCategory.id,
+                },
+            });
+
+            await tx.tripPhotoCategory.delete({
+                where: { id: categoryId },
+            });
+        });
+
+        return { success: true };
+    }
+
+    async updateTripPhoto(ownerId: string, tripId: string, photoId: string, dto: UpdateTripPhotoDto) {
+        await this.assertTripOwner(ownerId, tripId);
+
+        const photo = await this.prisma.tripPhoto.findFirst({
+            where: {
+                id: photoId,
+                tripId,
+            },
+        });
+
+        if (!photo) {
+            throw new NotFoundException("Photo not found");
+        }
+
+        const category = await this.getTripPhotoCategoryOrThrow(tripId, dto.categoryId);
+
+        const updated = await this.prisma.tripPhoto.update({
+            where: { id: photoId },
+            data: {
+                categoryId: category.id,
+            },
+        });
+
+        return {
+            photo: this.mapTripPhoto(updated),
+        };
+    }
+
+    async deleteTripPhoto(ownerId: string, tripId: string, photoId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+
+        const photo = await this.prisma.tripPhoto.findFirst({
+            where: {
+                id: photoId,
+                tripId,
+            },
+        });
+
+        if (!photo) {
+            throw new NotFoundException("Photo not found");
+        }
+
+        await this.prisma.tripPhoto.delete({
+            where: { id: photoId },
+        });
+
+        const urlsToDelete = [photo.imageUrl, photo.thumbnailUrl].filter(Boolean);
+        for (const url of urlsToDelete) {
+            try {
+                await deletePublicFile(url);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                this.logger.warn(`Failed to delete trip gallery asset from R2: ${message}`);
+            }
+        }
 
         return { success: true };
     }

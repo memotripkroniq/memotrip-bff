@@ -54,6 +54,49 @@ export async function uploadTripCover(
     return `${process.env.R2_PUBLIC_URL}/${fileName}`;
 }
 
+export async function uploadTripGalleryPhoto(
+    tripId: string,
+    imageBuffer: Buffer,
+    ext: "jpg" | "jpeg" | "png" = "jpg"
+): Promise<{ imageUrl: string; thumbnailUrl: string }> {
+    if (!process.env.R2_BUCKET) {
+        throw new Error("R2_BUCKET is not defined");
+    }
+
+    if (!process.env.R2_PUBLIC_URL) {
+        throw new Error("R2_PUBLIC_URL is not defined");
+    }
+
+    const photoId = randomUUID();
+    const baseKey = `trip-photos/${tripId}/photo_${photoId}`;
+    const imageKey = `${baseKey}.${ext}`;
+    const thumbnailKey = `${baseKey}_thumb.${ext}`;
+    const contentType = ext === "png" ? "image/png" : "image/jpeg";
+
+    await r2Client.send(
+        new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET,
+            Key: imageKey,
+            Body: imageBuffer,
+            ContentType: contentType,
+        })
+    );
+
+    await r2Client.send(
+        new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET,
+            Key: thumbnailKey,
+            Body: imageBuffer,
+            ContentType: contentType,
+        })
+    );
+
+    return {
+        imageUrl: `${process.env.R2_PUBLIC_URL}/${imageKey}`,
+        thumbnailUrl: `${process.env.R2_PUBLIC_URL}/${thumbnailKey}`,
+    };
+}
+
 export async function uploadUserProfilePhoto(
     imageBuffer: Buffer,
     ext: "jpg" | "jpeg" | "png" = "jpg"

@@ -1,20 +1,19 @@
-import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException, Param, NotFoundException, Delete } from "@nestjs/common";
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody } from "@nestjs/swagger";
+import { Body, Controller, Get, Post, Req, UploadedFile, UseGuards, UseInterceptors, BadRequestException, Param, NotFoundException, Delete, Patch } from "@nestjs/common";
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiBody, ApiOkResponse, ApiCreatedResponse } from "@nestjs/swagger";
 import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CreateTripDto } from "./dto/create-trip.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { memoryStorage } from "multer";
 import type { Express } from "express";
-import { Patch } from "@nestjs/common";
 import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
-
-
-type UploadedImage = {
-    originalname: string;
-    mimetype: string;
-    buffer: Buffer;
-};
+import { TripPhotosResponseDto } from "./dto/trip-photos-response.dto";
+import { UploadTripPhotoResponseDto } from "./dto/upload-trip-photo-response.dto";
+import { CreateTripPhotoCategoryDto } from "./dto/create-trip-photo-category.dto";
+import { CreateTripPhotoCategoryResponseDto } from "./dto/create-trip-photo-category-response.dto";
+import { UpdateTripPhotoCategoryDto } from "./dto/update-trip-photo-category.dto";
+import { UpdateTripPhotoDto } from "./dto/update-trip-photo.dto";
+import { DeleteSuccessDto } from "./dto/delete-success.dto";
 
 
 @ApiTags("Trips")
@@ -84,6 +83,105 @@ export class TripsController {
         const result = await this.tripsService.deleteTrip(req.user.sub, tripId);
         if (!result) throw new NotFoundException("Trip not found");
         return result;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get(":tripId/photos")
+    @ApiOperation({ summary: "Get trip photo gallery" })
+    @ApiOkResponse({ type: TripPhotosResponseDto })
+    async getTripPhotos(@Req() req, @Param("tripId") tripId: string) {
+        return this.tripsService.getTripPhotos(req.user.sub, tripId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(":tripId/photos")
+    @ApiOperation({ summary: "Upload trip gallery photo" })
+    @ApiConsumes("multipart/form-data")
+    @ApiCreatedResponse({ type: UploadTripPhotoResponseDto })
+    @ApiBody({
+        schema: {
+            type: "object",
+            properties: {
+                file: { type: "string", format: "binary" },
+                categoryId: { type: "string", nullable: true },
+            },
+            required: ["file"],
+        },
+    })
+    @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
+    async uploadTripPhoto(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @UploadedFile() file: Express.Multer.File,
+        @Body("categoryId") categoryId?: string,
+    ) {
+        if (!file) {
+            throw new BadRequestException("Missing file field (multipart name must be 'file')");
+        }
+
+        return this.tripsService.uploadTripPhoto(req.user.sub, tripId, file, categoryId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(":tripId/photos/:photoId")
+    @ApiOperation({ summary: "Update trip gallery photo" })
+    @ApiOkResponse({ type: UploadTripPhotoResponseDto })
+    async updateTripPhoto(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Param("photoId") photoId: string,
+        @Body() dto: UpdateTripPhotoDto,
+    ) {
+        return this.tripsService.updateTripPhoto(req.user.sub, tripId, photoId, dto);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(":tripId/photos/:photoId")
+    @ApiOperation({ summary: "Delete trip gallery photo" })
+    @ApiOkResponse({ type: DeleteSuccessDto })
+    async deleteTripPhoto(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Param("photoId") photoId: string,
+    ) {
+        return this.tripsService.deleteTripPhoto(req.user.sub, tripId, photoId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(":tripId/photo-categories")
+    @ApiOperation({ summary: "Create trip photo category" })
+    @ApiCreatedResponse({ type: CreateTripPhotoCategoryResponseDto })
+    async createTripPhotoCategory(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Body() dto: CreateTripPhotoCategoryDto,
+    ) {
+        return this.tripsService.createTripPhotoCategory(req.user.sub, tripId, dto);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch(":tripId/photo-categories/:categoryId")
+    @ApiOperation({ summary: "Rename trip photo category" })
+    @ApiOkResponse({ type: CreateTripPhotoCategoryResponseDto })
+    async updateTripPhotoCategory(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Param("categoryId") categoryId: string,
+        @Body() dto: UpdateTripPhotoCategoryDto,
+    ) {
+        return this.tripsService.renameTripPhotoCategory(req.user.sub, tripId, categoryId, dto);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(":tripId/photo-categories/:categoryId")
+    @ApiOperation({ summary: "Delete trip photo category and move photos to default category" })
+    @ApiOkResponse({ type: DeleteSuccessDto })
+    async deleteTripPhotoCategory(
+        @Req() req,
+        @Param("tripId") tripId: string,
+        @Param("categoryId") categoryId: string,
+    ) {
+        return this.tripsService.deleteTripPhotoCategory(req.user.sub, tripId, categoryId);
     }
     
     // ─────────────────────────────
