@@ -72,6 +72,7 @@ model User {
   isPremium    Boolean        @default(false)
   isKroniq     Boolean        @default(false)
   createdAt    DateTime       @default(now()) @db.Timestamp(6)
+  deletedAt    DateTime?      @db.Timestamp(6)
   provider     String?        @db.VarChar(50)
   providerId   String?        @db.VarChar(255)
   GroupMembers GroupMembers[]

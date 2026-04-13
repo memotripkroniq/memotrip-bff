@@ -1,7 +1,9 @@
 import {
     BadRequestException,
+    ForbiddenException,
     Injectable,
     InternalServerErrorException,
+    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -11,18 +13,79 @@ import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { deletePublicFile, uploadUserProfilePhoto } from '../storage/r2-upload';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
 export class AuthService {
     private googleClient: OAuth2Client;
+    private readonly logger = new Logger(AuthService.name);
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
     ) {
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    }
+
+    private async verifyGoogleReauth(user: {
+        id: string;
+        email: string;
+        provider: string | null;
+        providerId: string | null;
+    }, googleIdToken?: string) {
+        if (!googleIdToken) {
+            throw new UnauthorizedException({
+                code: 'GOOGLE_REAUTH_REQUIRED',
+                message: 'Fresh Google re-auth is required',
+            });
+        }
+
+        let payload;
+        try {
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken: googleIdToken,
+                audience: undefined,
+            });
+
+            payload = ticket.getPayload();
+        } catch (error) {
+            throw new UnauthorizedException({
+                code: 'GOOGLE_REAUTH_REQUIRED',
+                message: 'Invalid Google re-auth token',
+            });
+        }
+
+        if (!payload?.email || !payload.sub) {
+            throw new UnauthorizedException({
+                code: 'GOOGLE_REAUTH_REQUIRED',
+                message: 'Invalid Google re-auth token',
+            });
+        }
+
+        if (
+            payload.email !== user.email ||
+            (user.provider === 'GOOGLE' && user.providerId && payload.sub !== user.providerId)
+        ) {
+            throw new UnauthorizedException({
+                code: 'GOOGLE_REAUTH_REQUIRED',
+                message: 'Google re-auth does not match the current user',
+            });
+        }
+    }
+
+    private async deleteStorageUrl(url: string | null | undefined) {
+        if (!url) {
+            return;
+        }
+
+        try {
+            await deletePublicFile(url);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Failed to delete account asset from R2: ${message}`);
+        }
     }
 
     private parseDateOnly(value: string): Date {
@@ -72,8 +135,13 @@ export class AuthService {
     async register(data: RegisterDto) {
         const { email, password } = data;
 
-        const existing = await this.prisma.user.findUnique({
-            where: { email },
+        const cleanEmail = email.trim().toLowerCase();
+
+        const existing = await this.prisma.user.findFirst({
+            where: {
+                email: cleanEmail,
+                deletedAt: null,
+            },
         });
 
         if (existing) {
@@ -84,7 +152,7 @@ export class AuthService {
 
         const user = await this.prisma.user.create({
             data: {
-                email,
+                email: cleanEmail,
                 passwordhash: hashed,
             },
         });
@@ -97,8 +165,11 @@ export class AuthService {
     async login(email: string, password: string) {
         const cleanEmail = email.trim().toLowerCase();
 
-        const user = await this.prisma.user.findUnique({
-            where: { email: cleanEmail }
+        const user = await this.prisma.user.findFirst({
+            where: {
+                email: cleanEmail,
+                deletedAt: null,
+            },
         });
 
         if (!user) {
@@ -183,7 +254,12 @@ export class AuthService {
 
             console.log("🔎 Checking if user exists in DB…");
 
-            let user = await this.prisma.user.findUnique({ where: { email } });
+            let user = await this.prisma.user.findFirst({
+                where: {
+                    email,
+                    deletedAt: null,
+                },
+            });
 
             if (!user) {
                 console.log("🆕 User not found → creating");
@@ -240,12 +316,13 @@ export class AuthService {
                 passwordhash: true,
                 isPremium: true,
                 isKroniq: true,
+                deletedAt: true,
             },
         });
 
         console.log('👤 USER FROM DB:', user);
 
-        if (!user) {
+        if (!user || user.deletedAt) {
             throw new UnauthorizedException('User not found');
         }
 
@@ -294,10 +371,11 @@ export class AuthService {
             select: {
                 id: true,
                 passwordhash: true,
+                deletedAt: true,
             },
         });
 
-        if (!user) {
+        if (!user || user.deletedAt) {
             throw new UnauthorizedException('User not found');
         }
 
@@ -352,10 +430,10 @@ export class AuthService {
 
         const currentUser = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { profileImageUrl: true },
+            select: { profileImageUrl: true, deletedAt: true },
         });
 
-        if (!currentUser) {
+        if (!currentUser || currentUser.deletedAt) {
             throw new UnauthorizedException('User not found');
         }
 
@@ -383,10 +461,10 @@ export class AuthService {
     async deleteProfilePhoto(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { profileImageUrl: true },
+            select: { profileImageUrl: true, deletedAt: true },
         });
 
-        if (!user) {
+        if (!user || user.deletedAt) {
             throw new UnauthorizedException('User not found');
         }
 
@@ -413,8 +491,12 @@ export class AuthService {
     async getTripLimits(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { isPremium: true, isKroniq: true },
+            select: { isPremium: true, isKroniq: true, deletedAt: true },
         });
+
+        if (!user || user.deletedAt) {
+            throw new UnauthorizedException('User not found');
+        }
 
         const plan = user?.isKroniq ? "KRONIQ" : user?.isPremium ? "PREMIUM" : "FREE";
 
@@ -446,6 +528,147 @@ export class AuthService {
             limit: policy.limit,
             windowDays: policy.windowDays,
             windowStart,
+        };
+    }
+
+    async deleteAccount(userId: string, body: DeleteAccountDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                passwordhash: true,
+                provider: true,
+                providerId: true,
+                profileImageUrl: true,
+                kroniqImageUrl: true,
+                deletedAt: true,
+            },
+        });
+
+        if (!user || user.deletedAt) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        if (user.passwordhash) {
+            if (!body.currentPassword) {
+                throw new UnauthorizedException({
+                    code: 'RECENT_REAUTH_REQUIRED',
+                    message: 'Current password is required',
+                });
+            }
+
+            const passwordValid = await bcrypt.compare(body.currentPassword, user.passwordhash);
+            if (!passwordValid) {
+                throw new UnauthorizedException({
+                    code: 'INVALID_PASSWORD',
+                    message: 'Current password is incorrect',
+                });
+            }
+        } else if (user.provider === 'GOOGLE') {
+            await this.verifyGoogleReauth(user, body.googleIdToken);
+        } else {
+            throw new ForbiddenException({
+                code: 'DELETE_NOT_ALLOWED',
+                message: 'Account deletion is not available for this account type',
+            });
+        }
+
+        const ownedTrips = await this.prisma.trips.findMany({
+            where: { ownerId: userId },
+            select: {
+                id: true,
+                coverImageUrl: true,
+                mapImageUrl: true,
+                mapImageFullUrl: true,
+                TripTipsAndTrips: {
+                    select: {
+                        imageUrl: true,
+                    },
+                },
+                TripPhotos: {
+                    select: {
+                        imageUrl: true,
+                        thumbnailUrl: true,
+                    },
+                },
+            },
+        });
+
+        const assetUrls = new Set<string>();
+        if (user.profileImageUrl) assetUrls.add(user.profileImageUrl);
+        if (user.kroniqImageUrl) assetUrls.add(user.kroniqImageUrl);
+
+        for (const trip of ownedTrips) {
+            if (trip.coverImageUrl) assetUrls.add(trip.coverImageUrl);
+            if (trip.mapImageUrl) assetUrls.add(trip.mapImageUrl);
+            if (trip.mapImageFullUrl) assetUrls.add(trip.mapImageFullUrl);
+
+            for (const tip of trip.TripTipsAndTrips) {
+                if (tip.imageUrl) assetUrls.add(tip.imageUrl);
+            }
+
+            for (const photo of trip.TripPhotos) {
+                assetUrls.add(photo.imageUrl);
+                assetUrls.add(photo.thumbnailUrl);
+            }
+        }
+
+        const deletedEmail = `deleted+${user.id}@deleted.memotrip.local`;
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.groups.deleteMany({
+                where: { adminId: userId },
+            });
+
+            await tx.groupMembers.deleteMany({
+                where: { userId },
+            });
+
+            await tx.tripShares.deleteMany({
+                where: { visitorId: userId },
+            });
+
+            await tx.trips.deleteMany({
+                where: { ownerId: userId },
+            });
+
+            await tx.notification.deleteMany({
+                where: { userid: userId },
+            });
+
+            await tx.order.updateMany({
+                where: { userid: userId },
+                data: { userid: null },
+            });
+
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    email: deletedEmail,
+                    passwordhash: null,
+                    name: null,
+                    profileImageUrl: null,
+                    kroniqImageUrl: null,
+                    firstName: null,
+                    lastName: null,
+                    gender: null,
+                    dateOfBirth: null,
+                    isPremium: false,
+                    isKroniq: false,
+                    provider: null,
+                    providerId: null,
+                    deletedAt: new Date(),
+                },
+            });
+        });
+
+        for (const url of assetUrls) {
+            await this.deleteStorageUrl(url);
+        }
+
+        return {
+            success: true,
         };
     }
 }

@@ -24,6 +24,8 @@ import {
 import { AuthService } from './auth.service';
 import { ChangePasswordResponseDto } from './dto/change-password-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
+import { DeleteAccountResponseDto } from './dto/delete-account-response.dto';
 import { DeleteProfileImageResponseDto } from './dto/delete-profile-image-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { MeResponseDto } from './dto/me-response.dto';
@@ -97,6 +99,16 @@ export class AuthController {
     @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
     async uploadProfilePhoto(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
         return this.authService.uploadProfilePhoto(req.user.sub, file);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Delete('me')
+    @ApiOperation({ summary: 'Delete current user account' })
+    @ApiBody({ type: DeleteAccountDto })
+    @ApiOkResponse({ type: DeleteAccountResponseDto })
+    async deleteMe(@Req() req: any, @Body() body: DeleteAccountDto) {
+        return this.authService.deleteAccount(req.user.sub, body);
     }
 
     @UseGuards(JwtAuthGuard)
