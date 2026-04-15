@@ -71,6 +71,212 @@ export class TripsService {
         }
     }
 
+    private async requireKroniqOwner(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                isKroniq: true,
+            },
+        });
+
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
+        if (!user.isKroniq) {
+            throw new ForbiddenException({
+                code: "KRONIQ_PLAN_REQUIRED",
+                message: "KroniQ plan required",
+            });
+        }
+
+        return user;
+    }
+
+    private async cleanupExpiredKroniqGuests(ownerId: string) {
+        const group = await this.prisma.groups.findFirst({
+            where: { adminId: ownerId },
+            select: { id: true },
+        });
+
+        if (!group) {
+            return null;
+        }
+
+        const expiredGuests = await this.prisma.groupMembers.findMany({
+            where: {
+                groupId: group.id,
+                role: "GUEST",
+                expiresAt: {
+                    lte: new Date(),
+                },
+            },
+            select: {
+                userId: true,
+            },
+        });
+
+        if (expiredGuests.length === 0) {
+            return group.id;
+        }
+
+        const expiredGuestIds = expiredGuests.map((guest) => guest.userId);
+        const sharedTrips = await this.prisma.trips.findMany({
+            where: {
+                ownerId,
+                isSharedInKroniQ: true,
+            },
+            select: { id: true },
+        });
+
+        await this.prisma.$transaction(async (tx) => {
+            if (sharedTrips.length > 0) {
+                await tx.tripShares.deleteMany({
+                    where: {
+                        visitorId: { in: expiredGuestIds },
+                        tripId: { in: sharedTrips.map((trip) => trip.id) },
+                    },
+                });
+            }
+
+            await tx.groupMembers.deleteMany({
+                where: {
+                    groupId: group.id,
+                    userId: { in: expiredGuestIds },
+                },
+            });
+        });
+
+        return group.id;
+    }
+
+    private async getKroniqParticipantMemberships(ownerId: string) {
+        const groupId = await this.cleanupExpiredKroniqGuests(ownerId);
+        if (!groupId) {
+            return [];
+        }
+
+        return this.prisma.groupMembers.findMany({
+            where: {
+                groupId,
+                userId: {
+                    not: ownerId,
+                },
+            },
+            select: {
+                userId: true,
+                role: true,
+                expiresAt: true,
+            },
+        });
+    }
+
+    private async createTripSharesForMemberships(
+        tripId: string,
+        memberships: Array<{ userId: string; role: string; expiresAt: Date | null }>,
+    ) {
+        if (memberships.length === 0) {
+            return;
+        }
+
+        await this.prisma.$transaction(
+            memberships.map((membership) =>
+                this.prisma.tripShares.upsert({
+                    where: {
+                        tripId_visitorId: {
+                            tripId,
+                            visitorId: membership.userId,
+                        },
+                    },
+                    update: {
+                        expiresAt: membership.role === "GUEST" ? membership.expiresAt : null,
+                    },
+                    create: {
+                        tripId,
+                        visitorId: membership.userId,
+                        expiresAt: membership.role === "GUEST" ? membership.expiresAt : null,
+                    },
+                }),
+            ),
+        );
+    }
+
+    private mapTripDetail(trip: {
+        id: string;
+        coverImageUrl: string | null;
+        mapImageUrl: string | null;
+        mapImageFullUrl: string | null;
+        ownerId: string;
+        name: string;
+        destination: string;
+        transport: string;
+        from: string;
+        to: string;
+        waypoints: string[];
+        startDate: Date;
+        endDate: Date;
+        theme: string | null;
+        plannedBudget: string | null;
+        spentBudget: string | null;
+        isSharedInKroniQ: boolean;
+        createdAt: Date;
+        TripChecklistItems: Array<{ id: string; text: string; checked: boolean; order: number }>;
+        TripNotes: Array<{ id: string; text: string; order: number }>;
+        TripTipsAndTrips: Array<{ id: string; title: string; imageUrl: string | null; order: number }>;
+    }) {
+        return {
+            id: trip.id,
+            coverImageUrl: trip.coverImageUrl ?? null,
+            mapImageUrl: trip.mapImageUrl ?? null,
+            mapImageFullUrl: trip.mapImageFullUrl ?? null,
+            ownerId: trip.ownerId,
+            name: trip.name,
+            destination: trip.destination,
+            transport: trip.transport,
+            from: trip.from,
+            to: trip.to,
+            waypoints: trip.waypoints,
+            startDate: trip.startDate.toISOString(),
+            endDate: trip.endDate.toISOString(),
+            theme: trip.theme ?? null,
+            plannedBudget: trip.plannedBudget ?? null,
+            spentBudget: trip.spentBudget ?? null,
+            isSharedInKroniQ: trip.isSharedInKroniQ,
+            createdAt: trip.createdAt.toISOString(),
+            TripChecklistItems: trip.TripChecklistItems,
+            TripNotes: trip.TripNotes,
+            TripTipsAndTrips: trip.TripTipsAndTrips,
+        };
+    }
+
+    private async findAccessibleTrip(userId: string, tripId: string) {
+        return this.prisma.trips.findFirst({
+            where: {
+                id: tripId,
+                OR: [
+                    { ownerId: userId },
+                    {
+                        TripShares: {
+                            some: {
+                                visitorId: userId,
+                                OR: [
+                                    { expiresAt: null },
+                                    { expiresAt: { gt: new Date() } },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            },
+            include: {
+                TripChecklistItems: { orderBy: { order: "asc" } },
+                TripNotes: { orderBy: { order: "asc" } },
+                TripTipsAndTrips: { orderBy: { order: "asc" } },
+            },
+        });
+    }
+
     private async ensureDefaultPhotoCategory(tripId: string) {
         const existing = await this.prisma.tripPhotoCategory.findFirst({
             where: { tripId, isDefault: true },
@@ -269,6 +475,7 @@ export class TripsService {
                 coverImageUrl: dto.coverImageUrl ?? null,
                 mapImageUrl: dto.mapImageUrl ?? null,
                 mapImageFullUrl: dto.mapImageFullUrl ?? null,
+                isSharedInKroniQ: false,
 
 
                 User: {
@@ -295,17 +502,32 @@ export class TripsService {
     async getMyTrips(ownerId: string) {
         const trips = await this.prisma.trips.findMany({
             where: {
-                ownerId,
+                OR: [
+                    { ownerId },
+                    {
+                        TripShares: {
+                            some: {
+                                visitorId: ownerId,
+                                OR: [
+                                    { expiresAt: null },
+                                    { expiresAt: { gt: new Date() } },
+                                ],
+                            },
+                        },
+                    },
+                ],
             },
             orderBy: {
                 createdAt: "desc",
             },
             select: {
                 id: true,
+                ownerId: true,
                 name: true,
                 coverImageUrl: true,
                 mapImageUrl: true,
                 theme: true,
+                isSharedInKroniQ: true,
             },
         });
 
@@ -316,18 +538,18 @@ export class TripsService {
             coverImageUrl: trip.coverImageUrl ?? null,
             mapImageUrl: trip.mapImageUrl ?? null,
             theme: trip.theme ?? null,
+            isSharedInKroniQ: trip.isSharedInKroniQ,
+            isSharedWithMe: trip.ownerId !== ownerId,
         }));
     }
 
     async getTripDetail(ownerId: string, tripId: string) {
-        return this.prisma.trips.findFirst({
-            where: { id: tripId, ownerId },
-            include: {
-                TripChecklistItems: { orderBy: { order: "asc" } },
-                TripNotes: { orderBy: { order: "asc" } },
-                TripTipsAndTrips: { orderBy: { order: "asc" } },
-            },
-        });
+        const trip = await this.findAccessibleTrip(ownerId, tripId);
+        if (!trip) {
+            return null;
+        }
+
+        return this.mapTripDetail(trip);
     }
 
     async updateTripDetail(ownerId: string, tripId: string, dto: UpdateTripDetailDto) {
@@ -432,7 +654,10 @@ export class TripsService {
     }
 
     async getTripPhotos(ownerId: string, tripId: string) {
-        await this.assertTripOwner(ownerId, tripId);
+        const trip = await this.findAccessibleTrip(ownerId, tripId);
+        if (!trip) {
+            throw new NotFoundException("Trip not found");
+        }
         await this.ensureDefaultPhotoCategory(tripId);
 
         const [categories, photos] = await this.prisma.$transaction([
@@ -619,6 +844,50 @@ export class TripsService {
         }
 
         return { success: true };
+    }
+
+    async shareTripInKroniq(ownerId: string, tripId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+        await this.requireKroniqOwner(ownerId);
+
+        const memberships = await this.getKroniqParticipantMemberships(ownerId);
+
+        await this.prisma.trips.update({
+            where: { id: tripId },
+            data: {
+                isSharedInKroniQ: true,
+            },
+        });
+
+        await this.createTripSharesForMemberships(tripId, memberships);
+
+        return {
+            success: true,
+            isSharedInKroniQ: true,
+        };
+    }
+
+    async unshareTripInKroniq(ownerId: string, tripId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+        await this.requireKroniqOwner(ownerId);
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.trips.update({
+                where: { id: tripId },
+                data: {
+                    isSharedInKroniQ: false,
+                },
+            });
+
+            await tx.tripShares.deleteMany({
+                where: { tripId },
+            });
+        });
+
+        return {
+            success: true,
+            isSharedInKroniQ: false,
+        };
     }
 
 

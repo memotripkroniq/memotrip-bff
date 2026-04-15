@@ -17,6 +17,68 @@ import { AddKroniqMemberDto } from './dto/add-kroniq-member.dto';
 export class KroniqService {
     constructor(private readonly prisma: PrismaService) {}
 
+    private async syncSharedTripsForMembership(ownerId: string, membership: {
+        userId: string;
+        role: string;
+        expiresAt: Date | null;
+    }) {
+        const sharedTrips = await this.prisma.trips.findMany({
+            where: {
+                ownerId,
+                isSharedInKroniQ: true,
+            },
+            select: { id: true },
+        });
+
+        if (sharedTrips.length === 0) {
+            return;
+        }
+
+        await this.prisma.$transaction(
+            sharedTrips.map((trip) =>
+                this.prisma.tripShares.upsert({
+                    where: {
+                        tripId_visitorId: {
+                            tripId: trip.id,
+                            visitorId: membership.userId,
+                        },
+                    },
+                    update: {
+                        expiresAt: membership.role === 'GUEST' ? membership.expiresAt : null,
+                    },
+                    create: {
+                        tripId: trip.id,
+                        visitorId: membership.userId,
+                        expiresAt: membership.role === 'GUEST' ? membership.expiresAt : null,
+                    },
+                }),
+            ),
+        );
+    }
+
+    private async removeSharedTripsForMembership(ownerId: string, visitorId: string) {
+        const sharedTrips = await this.prisma.trips.findMany({
+            where: {
+                ownerId,
+                isSharedInKroniQ: true,
+            },
+            select: { id: true },
+        });
+
+        if (sharedTrips.length === 0) {
+            return;
+        }
+
+        await this.prisma.tripShares.deleteMany({
+            where: {
+                visitorId,
+                tripId: {
+                    in: sharedTrips.map((trip) => trip.id),
+                },
+            },
+        });
+    }
+
     private mapMember(member: {
         role: string;
         expiresAt: Date | null;
@@ -38,7 +100,19 @@ export class KroniqService {
     }
 
     private async cleanupExpiredGuests(groupId: string) {
-        await this.prisma.groupMembers.deleteMany({
+        const group = await this.prisma.groups.findUnique({
+            where: { id: groupId },
+            select: {
+                id: true,
+                adminId: true,
+            },
+        });
+
+        if (!group) {
+            return;
+        }
+
+        const expiredGuests = await this.prisma.groupMembers.findMany({
             where: {
                 groupId,
                 role: 'GUEST',
@@ -46,6 +120,40 @@ export class KroniqService {
                     lte: new Date(),
                 },
             },
+            select: {
+                userId: true,
+            },
+        });
+
+        if (expiredGuests.length === 0) {
+            return;
+        }
+
+        const expiredGuestIds = expiredGuests.map((guest) => guest.userId);
+        const sharedTrips = await this.prisma.trips.findMany({
+            where: {
+                ownerId: group.adminId,
+                isSharedInKroniQ: true,
+            },
+            select: { id: true },
+        });
+
+        await this.prisma.$transaction(async (tx) => {
+            if (sharedTrips.length > 0) {
+                await tx.tripShares.deleteMany({
+                    where: {
+                        visitorId: { in: expiredGuestIds },
+                        tripId: { in: sharedTrips.map((trip) => trip.id) },
+                    },
+                });
+            }
+
+            await tx.groupMembers.deleteMany({
+                where: {
+                    groupId,
+                    userId: { in: expiredGuestIds },
+                },
+            });
         });
     }
 
@@ -259,6 +367,14 @@ export class KroniqService {
             },
         });
 
+        if (memberUser.id !== ownerId) {
+            await this.syncSharedTripsForMembership(ownerId, {
+                userId: memberUser.id,
+                role: 'MEMBER',
+                expiresAt: null,
+            });
+        }
+
         return {
             success: true,
             member: this.mapMember(createdMember),
@@ -336,6 +452,12 @@ export class KroniqService {
             },
         });
 
+        await this.syncSharedTripsForMembership(ownerId, {
+            userId: guestUser.id,
+            role: 'GUEST',
+            expiresAt,
+        });
+
         return {
             success: true,
             guest: this.mapMember(createdGuest),
@@ -381,6 +503,8 @@ export class KroniqService {
                 },
             },
         });
+
+        await this.removeSharedTripsForMembership(ownerId, memberId);
 
         return {
             success: true,

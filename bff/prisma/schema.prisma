@@ -146,6 +146,7 @@ model Trips {
   // Budget
   plannedBudget String?
   spentBudget   String?
+  isSharedInKroniQ Boolean @default(false)
   
   // Meta
   createdAt DateTime @default(now()) @db.Timestamp(6)

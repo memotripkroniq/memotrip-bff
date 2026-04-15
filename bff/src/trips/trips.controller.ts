@@ -14,6 +14,8 @@ import { CreateTripPhotoCategoryResponseDto } from "./dto/create-trip-photo-cate
 import { UpdateTripPhotoCategoryDto } from "./dto/update-trip-photo-category.dto";
 import { UpdateTripPhotoDto } from "./dto/update-trip-photo.dto";
 import { DeleteSuccessDto } from "./dto/delete-success.dto";
+import { TripDetailResponseDto } from "./dto/trip-detail-response.dto";
+import { TripKroniqShareResponseDto } from "./dto/trip-kroniq-share-response.dto";
 
 
 @ApiTags("Trips")
@@ -51,6 +53,7 @@ export class TripsController {
     // ─────────────────────────────
     @UseGuards(JwtAuthGuard)
     @Get(":tripId")
+    @ApiOkResponse({ type: TripDetailResponseDto })
     async getTripDetail(@Req() req, @Param("tripId") tripId: string) {
         const trip = await this.tripsService.getTripDetail(req.user.sub, tripId);
         if (!trip) throw new NotFoundException("Trip not found");
@@ -182,6 +185,28 @@ export class TripsController {
         @Param("categoryId") categoryId: string,
     ) {
         return this.tripsService.deleteTripPhotoCategory(req.user.sub, tripId, categoryId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(":tripId/kroniq-share")
+    @ApiOperation({ summary: "Share trip with all current KroniQ participants" })
+    @ApiOkResponse({ type: TripKroniqShareResponseDto })
+    async shareTripInKroniq(
+        @Req() req,
+        @Param("tripId") tripId: string,
+    ) {
+        return this.tripsService.shareTripInKroniq(req.user.sub, tripId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(":tripId/kroniq-share")
+    @ApiOperation({ summary: "Remove KroniQ sharing for this trip" })
+    @ApiOkResponse({ type: TripKroniqShareResponseDto })
+    async unshareTripInKroniq(
+        @Req() req,
+        @Param("tripId") tripId: string,
+    ) {
+        return this.tripsService.unshareTripInKroniq(req.user.sub, tripId);
     }
     
     // ─────────────────────────────

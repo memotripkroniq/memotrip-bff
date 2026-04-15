@@ -1,0 +1,2 @@
+ALTER TABLE "Trips"
+ADD COLUMN "isSharedInKroniQ" BOOLEAN NOT NULL DEFAULT false;
