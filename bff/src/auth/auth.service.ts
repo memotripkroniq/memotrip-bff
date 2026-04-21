@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
+import type { TokenPayload } from 'google-auth-library';
 import * as bcrypt from 'bcryptjs';
 import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
@@ -29,6 +30,52 @@ export class AuthService {
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
 
+    private getGoogleAudiences(): string[] {
+        return [
+            process.env.GOOGLE_ANDROID_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_ID,
+        ].filter((value): value is string => Boolean(value?.trim()));
+    }
+
+    private async verifyGoogleIdToken(
+        idToken: string | undefined,
+        invalidTokenError: string | { code: string; message: string },
+    ): Promise<TokenPayload & { email: string; sub: string }> {
+        if (!idToken?.trim()) {
+            throw new UnauthorizedException(invalidTokenError);
+        }
+
+        const audiences = this.getGoogleAudiences();
+
+        if (audiences.length === 0) {
+            this.logger.error('Google auth is not configured: no allowed client IDs set');
+            throw new InternalServerErrorException('Google auth is not configured');
+        }
+
+        try {
+            const ticket = await this.googleClient.verifyIdToken({
+                idToken,
+                audience: audiences,
+            });
+
+            const payload = ticket.getPayload();
+
+            if (!payload?.email || !payload.sub) {
+                throw new UnauthorizedException(invalidTokenError);
+            }
+
+            return payload as TokenPayload & { email: string; sub: string };
+        } catch (error) {
+            if (error instanceof UnauthorizedException) {
+                throw error;
+            }
+
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Google ID token verification failed: ${message}`);
+            throw new UnauthorizedException(invalidTokenError);
+        }
+    }
+
     private async verifyGoogleReauth(user: {
         id: string;
         email: string;
@@ -42,27 +89,10 @@ export class AuthService {
             });
         }
 
-        let payload;
-        try {
-            const ticket = await this.googleClient.verifyIdToken({
-                idToken: googleIdToken,
-                audience: undefined,
-            });
-
-            payload = ticket.getPayload();
-        } catch (error) {
-            throw new UnauthorizedException({
-                code: 'GOOGLE_REAUTH_REQUIRED',
-                message: 'Invalid Google re-auth token',
-            });
-        }
-
-        if (!payload?.email || !payload.sub) {
-            throw new UnauthorizedException({
-                code: 'GOOGLE_REAUTH_REQUIRED',
-                message: 'Invalid Google re-auth token',
-            });
-        }
+        const payload = await this.verifyGoogleIdToken(googleIdToken, {
+            code: 'GOOGLE_REAUTH_REQUIRED',
+            message: 'Invalid Google re-auth token',
+        });
 
         if (
             payload.email !== user.email ||
@@ -204,55 +234,11 @@ export class AuthService {
 
     async googleLogin(idToken: string) {
         try {
-            console.log("🔥 GOOGLE LOGIN: idToken received:", idToken.substring(0, 15) + "...");
-            console.log("🌍 GOOGLE_CLIENT_ID =", process.env.GOOGLE_CLIENT_ID);
-            console.log("🤖 GOOGLE_ANDROID_CLIENT_ID =", process.env.GOOGLE_ANDROID_CLIENT_ID);
-
-            const audienceList = [
-                process.env.GOOGLE_ANDROID_CLIENT_ID,
-                process.env.GOOGLE_CLIENT_ID,
-            ];
-
-            console.log("🎯 AUDIENCE SENT TO GOOGLE:", audienceList);
-
-            const ticket = await this.googleClient.verifyIdToken({
-                idToken,
-                audience: undefined,
-            });
-
-            console.log("🔥 GOOGLE LOGIN: Token OK, raw:", ticket);
-
-            // @ts-ignore Google Auth library typing mismatch
-            const payload = ticket.getPayload();
-
-            console.log("🔍 PAYLOAD AZP:", payload?.azp);
-            console.log("🔍 PAYLOAD AUD:", payload?.aud);
-            console.log(
-                "🔍 EXPECTED:",
-                process.env.GOOGLE_ANDROID_CLIENT_ID,
-                process.env.GOOGLE_CLIENT_ID
-            );
-            console.log("📦 GOOGLE LOGIN PAYLOAD:", payload);
-
-            if (!payload) {
-                console.error("❌ NO PAYLOAD RETURNED FROM GOOGLE");
-                throw new UnauthorizedException("NO_PAYLOAD");
-            }
-
-            if (!payload.email) {
-                console.error("❌ PAYLOAD HAS NO EMAIL");
-                throw new UnauthorizedException("NO_EMAIL");
-            }
-
-            console.log("📧 EMAIL:", payload.email);
-            console.log("🆔 GOOGLE SUB:", payload.sub);
-            console.log("👤 NAME:", payload.name);
+            const payload = await this.verifyGoogleIdToken(idToken, "GOOGLE_401");
 
             const email = payload.email;
             const googleUserId = payload.sub;
             const name = payload.name ?? "Google User";
-
-            console.log("🔎 Checking if user exists in DB…");
 
             let user = await this.prisma.user.findFirst({
                 where: {
@@ -262,8 +248,6 @@ export class AuthService {
             });
 
             if (!user) {
-                console.log("🆕 User not found → creating");
-
                 user = await this.prisma.user.create({
                     data: {
                         email,
@@ -273,11 +257,7 @@ export class AuthService {
                         passwordhash: null,
                     },
                 });
-            } else {
-                console.log("👋 User exists, logging in");
             }
-
-            console.log("🧪 DB User:", user);
 
             const accessToken = this.jwtService.sign(
                 { sub: user.id },
@@ -289,11 +269,15 @@ export class AuthService {
                 { expiresIn: "30d" }
             );
 
-            console.log("🎫 TOKENS CREATED OK");
-
             return { accessToken, refreshToken };
         } catch (e) {
-            console.error("❌ GOOGLE LOGIN ERROR:", e);
+            const message = e instanceof Error ? e.message : String(e);
+            this.logger.warn(`Google login rejected: ${message}`);
+
+            if (e instanceof UnauthorizedException || e instanceof InternalServerErrorException) {
+                throw e;
+            }
+
             throw new UnauthorizedException("GOOGLE_401");
         }
     }
