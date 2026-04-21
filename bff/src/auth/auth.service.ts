@@ -269,7 +269,12 @@ export class AuthService {
             },
         });
 
-        await sendResetPasswordEmail(user.email, token);
+        try {
+            await sendResetPasswordEmail(user.email, token);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(`Failed to send password reset email: ${message}`);
+        }
 
         return { success: true };
     }
