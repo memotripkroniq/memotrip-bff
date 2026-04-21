@@ -27,10 +27,12 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { DeleteAccountResponseDto } from './dto/delete-account-response.dto';
 import { DeleteProfileImageResponseDto } from './dto/delete-profile-image-response.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MeResponseDto } from './dto/me-response.dto';
 import { ProfileImageResponseDto } from './dto/profile-image-response.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
@@ -52,6 +54,16 @@ export class AuthController {
     @Post('google')
     async google(@Body('idToken') idToken: string) {
         return this.authService.googleLogin(idToken);
+    }
+
+    @Post('forgot-password')
+    async forgotPassword(@Body() dto: ForgotPasswordDto) {
+        return this.authService.forgotPassword(dto.email);
+    }
+
+    @Post('reset-password')
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto.token, dto.newPassword);
     }
 
     @UseGuards(JwtAuthGuard)

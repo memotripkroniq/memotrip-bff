@@ -10,12 +10,14 @@ import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import type { TokenPayload } from 'google-auth-library';
 import * as bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { deletePublicFile, uploadUserProfilePhoto } from '../storage/r2-upload';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { RegisterDto } from './dto/register.dto';
+import { sendResetPasswordEmail } from './send-reset-password-email';
 import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
@@ -230,6 +232,90 @@ export class AuthService {
                 email: user.email,
             }),
         };
+    }
+
+    async forgotPassword(email: string) {
+        const cleanEmail = email.trim().toLowerCase();
+
+        const user = await this.prisma.user.findFirst({
+            where: {
+                email: cleanEmail,
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                email: true,
+                passwordhash: true,
+            },
+        });
+
+        // Always return the same response to avoid leaking account existence.
+        if (!user || !user.passwordhash) {
+            return { success: true };
+        }
+
+        const token = randomUUID();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        await this.prisma.passwordResetToken.deleteMany({
+            where: { userId: user.id },
+        });
+
+        await this.prisma.passwordResetToken.create({
+            data: {
+                userId: user.id,
+                token,
+                expiresAt,
+            },
+        });
+
+        await sendResetPasswordEmail(user.email, token);
+
+        return { success: true };
+    }
+
+    async resetPassword(token: string, newPassword: string) {
+        const cleanToken = token.trim();
+
+        const record = await this.prisma.passwordResetToken.findUnique({
+            where: { token: cleanToken },
+            select: {
+                userId: true,
+                expiresAt: true,
+                user: {
+                    select: {
+                        id: true,
+                        passwordhash: true,
+                        deletedAt: true,
+                    },
+                },
+            },
+        });
+
+        if (!record || record.expiresAt < new Date() || !record.user || record.user.deletedAt) {
+            throw new BadRequestException('Invalid or expired token');
+        }
+
+        if (record.user.passwordhash) {
+            const sameAsCurrent = await bcrypt.compare(newPassword, record.user.passwordhash);
+            if (sameAsCurrent) {
+                throw new BadRequestException('New password must be different from current password');
+            }
+        }
+
+        const passwordhash = await bcrypt.hash(newPassword, 10);
+
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: record.userId },
+                data: { passwordhash },
+            }),
+            this.prisma.passwordResetToken.deleteMany({
+                where: { userId: record.userId },
+            }),
+        ]);
+
+        return { success: true };
     }
 
     async googleLogin(idToken: string) {

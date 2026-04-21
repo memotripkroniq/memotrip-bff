@@ -58,29 +58,41 @@ model Payment {
 }
 
 model User {
-  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String         @unique @db.VarChar(255)
-  passwordhash String?        @db.VarChar(255)
-  name         String?        @db.VarChar(255)
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String               @unique @db.VarChar(255)
+  passwordhash        String?              @db.VarChar(255)
+  name                String?              @db.VarChar(255)
   profileImageUrl String?     @db.VarChar(1024)
   kroniqImageUrl String?      @db.VarChar(1024)
-  firstName    String?        @db.VarChar(255)
-  lastName     String?        @db.VarChar(255)
-  gender       String?        @db.VarChar(50)
-  dateOfBirth  DateTime?      @db.Date
-  country      String         @default("EN") @db.VarChar(255)
-  isPremium    Boolean        @default(false)
-  isKroniq     Boolean        @default(false)
-  createdAt    DateTime       @default(now()) @db.Timestamp(6)
-  deletedAt    DateTime?      @db.Timestamp(6)
-  provider     String?        @db.VarChar(50)
-  providerId   String?        @db.VarChar(255)
-  GroupMembers GroupMembers[]
-  Groups       Groups[]
-  Notification Notification[]
-  Order        Order[]
-  TripShares   TripShares[]
-  Trips        Trips[]
+  firstName           String?              @db.VarChar(255)
+  lastName            String?              @db.VarChar(255)
+  gender              String?              @db.VarChar(50)
+  dateOfBirth         DateTime?            @db.Date
+  country             String               @default("EN") @db.VarChar(255)
+  isPremium           Boolean              @default(false)
+  isKroniq            Boolean              @default(false)
+  createdAt           DateTime             @default(now()) @db.Timestamp(6)
+  deletedAt           DateTime?            @db.Timestamp(6)
+  provider            String?              @db.VarChar(50)
+  providerId          String?              @db.VarChar(255)
+  GroupMembers        GroupMembers[]
+  Groups              Groups[]
+  Notification        Notification[]
+  Order               Order[]
+  PasswordResetTokens PasswordResetToken[]
+  TripShares          TripShares[]
+  Trips               Trips[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime @db.Timestamp(6)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId])
 }
 
 model GroupMembers {
