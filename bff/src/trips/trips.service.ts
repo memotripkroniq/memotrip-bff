@@ -6,7 +6,8 @@ import { LineString } from "geojson";
 import { CreateTripDto } from "./dto/create-trip.dto";
 import { deletePublicFile, uploadTripCover, uploadTripGalleryPhoto } from "../storage/r2-upload";
 import { ForbiddenException } from "@nestjs/common";
-import { canCreateTrip } from "./tripLimits"; // uprav cestu podle toho, kde máš soubor
+import { getTripPhotoLimitStatus } from "./photoLimits";
+import { getTripLimitStatus } from "./tripLimits";
 import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
 import { CreateTripPhotoCategoryDto } from "./dto/create-trip-photo-category.dto";
 import { UpdateTripPhotoCategoryDto } from "./dto/update-trip-photo-category.dto";
@@ -446,12 +447,12 @@ export class TripsService {
     // ➕ CREATE TRIP
     // ─────────────────────────────
     async createTrip(ownerId: string, dto: CreateTripDto) {
-        // 1) Limit check
-        const limit = await canCreateTrip(this.prisma, ownerId);
+        const limit = await getTripLimitStatus(this.prisma, ownerId);
 
         if (!limit.allowed) {
             throw new ForbiddenException({
                 code: "TRIP_LIMIT_REACHED",
+                message: "Trip creation limit reached for the current billing window",
                 plan: limit.plan,
                 used: limit.used,
                 limit: limit.limit,
@@ -683,6 +684,11 @@ export class TripsService {
         };
     }
 
+    async getTripPhotoLimits(ownerId: string, tripId: string) {
+        await this.assertTripOwner(ownerId, tripId);
+        return getTripPhotoLimitStatus(this.prisma, ownerId, tripId);
+    }
+
     async uploadTripPhoto(ownerId: string, tripId: string, file: Express.Multer.File, categoryId?: string) {
         await this.assertTripOwner(ownerId, tripId);
 
@@ -692,6 +698,17 @@ export class TripsService {
 
         if (!file.mimetype?.startsWith("image/")) {
             throw new BadRequestException("Only image files are allowed");
+        }
+
+        const limit = await getTripPhotoLimitStatus(this.prisma, ownerId, tripId);
+        if (!limit.allowed) {
+            throw new ForbiddenException({
+                code: "TRIP_PHOTO_LIMIT_REACHED",
+                message: "Trip photo upload limit reached for the current plan",
+                plan: limit.plan,
+                used: limit.used,
+                limit: limit.limit,
+            });
         }
 
         const category = categoryId

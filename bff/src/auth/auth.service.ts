@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import type { Express } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { deletePublicFile, uploadUserProfilePhoto } from '../storage/r2-upload';
+import { getTripLimitStatus } from '../trips/tripLimits';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -566,44 +567,14 @@ export class AuthService {
     async getTripLimits(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { isPremium: true, isKroniq: true, deletedAt: true },
+            select: { deletedAt: true },
         });
 
         if (!user || user.deletedAt) {
             throw new UnauthorizedException('User not found');
         }
 
-        const plan = user?.isKroniq ? "KRONIQ" : user?.isPremium ? "PREMIUM" : "FREE";
-
-        const policy =
-            plan === "KRONIQ"
-                ? { limit: 30, windowDays: 365 }
-                : plan === "PREMIUM"
-                    ? { limit: 3, windowDays: 30 }
-                    : { limit: 1, windowDays: 90 };
-
-        const windowStart = new Date(
-            Date.now() - policy.windowDays * 24 * 60 * 60 * 1000
-        );
-
-        const used = await this.prisma.trips.count({
-            where: {
-                ownerId: userId,
-                createdAt: { gte: windowStart },
-            },
-        });
-
-        const allowed = used < policy.limit;
-
-        return {
-            allowed,
-            code: allowed ? null : "TRIP_LIMIT_REACHED",
-            plan,
-            used,
-            limit: policy.limit,
-            windowDays: policy.windowDays,
-            windowStart,
-        };
+        return getTripLimitStatus(this.prisma, userId);
     }
 
     async deleteAccount(userId: string, body: DeleteAccountDto) {

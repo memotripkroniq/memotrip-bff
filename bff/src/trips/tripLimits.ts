@@ -1,29 +1,80 @@
-﻿import { PrismaClient } from "@prisma/client";
+type TripPlan = 'free' | 'premium' | 'kroniq';
+type TripLimitCode = 'TRIP_LIMIT_OK' | 'TRIP_LIMIT_REACHED';
 
-type PlanKey = "FREE" | "PREMIUM" | "KRONIQ";
-
-const PLAN_POLICY: Record<PlanKey, { limit: number; windowDays: number }> = {
-    FREE: { limit: 1, windowDays: 90 },
-    PREMIUM: { limit: 3, windowDays: 30 },
-    KRONIQ: { limit: 30, windowDays: 365 },
+type TripPolicy = {
+    limit: number;
+    windowDays: number;
 };
 
-function getPlanFromUser(user: { isPremium: boolean; isKroniq: boolean }): PlanKey {
-    if (user.isKroniq) return "KRONIQ";
-    if (user.isPremium) return "PREMIUM";
-    return "FREE";
+type UserPlanFlags = {
+    isPremium: boolean;
+    isKroniq: boolean;
+};
+
+type TripLimitPrisma = {
+    user: {
+        findUnique(args: {
+            where: { id: string };
+            select: { isPremium: true; isKroniq: true };
+        }): Promise<UserPlanFlags | null>;
+    };
+    trips: {
+        count(args: {
+            where: {
+                ownerId: string;
+                createdAt: { gte: Date };
+            };
+        }): Promise<number>;
+    };
+};
+
+export type TripLimitStatus = {
+    allowed: boolean;
+    code: TripLimitCode;
+    plan: TripPlan;
+    used: number;
+    limit: number;
+    windowDays: number;
+    windowStart: Date;
+};
+
+export const TRIP_LIMIT_WINDOW_DAYS = 30;
+
+export const TRIP_PLAN_POLICY: Record<TripPlan, TripPolicy> = {
+    free: { limit: 1, windowDays: TRIP_LIMIT_WINDOW_DAYS },
+    premium: { limit: 3, windowDays: TRIP_LIMIT_WINDOW_DAYS },
+    kroniq: { limit: 30, windowDays: TRIP_LIMIT_WINDOW_DAYS },
+};
+
+export function getTripPlanFromUser(user: UserPlanFlags): TripPlan {
+    if (user.isKroniq) {
+        return 'kroniq';
+    }
+
+    if (user.isPremium) {
+        return 'premium';
+    }
+
+    return 'free';
 }
 
-export async function canCreateTrip(prisma: PrismaClient, userId: string) {
+export function getTripLimitWindowStart(now = new Date()): Date {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+}
+
+export async function getTripLimitStatus(
+    prisma: TripLimitPrisma,
+    userId: string,
+    now = new Date(),
+): Promise<TripLimitStatus> {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { isPremium: true, isKroniq: true },
     });
 
-    const plan = user ? getPlanFromUser(user) : "FREE";
-    const { limit, windowDays } = PLAN_POLICY[plan];
-
-    const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+    const plan = user ? getTripPlanFromUser(user) : 'free';
+    const policy = TRIP_PLAN_POLICY[plan];
+    const windowStart = getTripLimitWindowStart(now);
 
     const used = await prisma.trips.count({
         where: {
@@ -32,12 +83,15 @@ export async function canCreateTrip(prisma: PrismaClient, userId: string) {
         },
     });
 
+    const allowed = used < policy.limit;
+
     return {
-        allowed: used < limit,
+        allowed,
+        code: allowed ? 'TRIP_LIMIT_OK' : 'TRIP_LIMIT_REACHED',
         plan,
         used,
-        limit,
-        windowDays,
+        limit: policy.limit,
+        windowDays: policy.windowDays,
         windowStart,
     };
 }

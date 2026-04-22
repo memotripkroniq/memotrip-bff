@@ -16,6 +16,7 @@ import { UpdateTripPhotoDto } from "./dto/update-trip-photo.dto";
 import { DeleteSuccessDto } from "./dto/delete-success.dto";
 import { TripDetailResponseDto } from "./dto/trip-detail-response.dto";
 import { TripKroniqShareResponseDto } from "./dto/trip-kroniq-share-response.dto";
+import { TripPhotoLimitResponseDto } from "./dto/trip-photo-limit-response.dto";
 
 
 @ApiTags("Trips")
@@ -86,6 +87,14 @@ export class TripsController {
         const result = await this.tripsService.deleteTrip(req.user.sub, tripId);
         if (!result) throw new NotFoundException("Trip not found");
         return result;
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get(":tripId/limits/photos")
+    @ApiOperation({ summary: "Get trip photo upload limit" })
+    @ApiOkResponse({ type: TripPhotoLimitResponseDto })
+    async getTripPhotoLimits(@Req() req, @Param("tripId") tripId: string) {
+        return this.tripsService.getTripPhotoLimits(req.user.sub, tripId);
     }
 
     @UseGuards(JwtAuthGuard)
