@@ -375,8 +375,6 @@ export class AuthService {
     }
 
     async getMe(userId: string) {
-        console.log('🔍 GET ME userId:', userId);
-
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -395,8 +393,6 @@ export class AuthService {
                 deletedAt: true,
             },
         });
-
-        console.log('👤 USER FROM DB:', user);
 
         if (!user || user.deletedAt) {
             throw new UnauthorizedException('User not found');
@@ -527,7 +523,7 @@ export class AuthService {
             try {
                 await deletePublicFile(currentUser.profileImageUrl);
             } catch (error) {
-                console.error('Failed to delete previous profile image:', error);
+                this.logger.warn('Failed to delete previous profile image from storage');
             }
         }
 
@@ -548,7 +544,7 @@ export class AuthService {
             try {
                 await deletePublicFile(user.profileImageUrl);
             } catch (error) {
-                console.error('Failed to delete profile image:', error);
+                this.logger.warn('Failed to delete profile image from storage');
                 throw new InternalServerErrorException('Failed to delete profile image from storage');
             }
         }
