@@ -1,5 +1,7 @@
 ﻿import { Body, Controller, Post, Logger } from "@nestjs/common";
 import { TripMapService } from "./trip-map.service";
+import { UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { GenerateTripMapDto, TransportType } from "./dto/generate-trip-map.dto";
 import { PointDto, RenderTripMapDto } from "./dto/render-trip-map.dto";
 import { OsmGeocodingService } from "../locations/osm-geocoding.service";
@@ -18,11 +20,13 @@ export class TripMapController {
         private readonly aiPlanner: AiRoutePlannerService
     ) {}
 
+    @UseGuards(JwtAuthGuard)
     @Post("generate-map")
     async generateMap(@Body() dto: GenerateTripMapDto) {
         return this.tripMapService.generateTripMap(dto);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post("render-map")
     async renderMap(@Body() dto: GenerateTripMapDto) {
         // 1) AI plán segmentů
