@@ -40,6 +40,14 @@ export class AuthService {
         ].filter((value): value is string => Boolean(value?.trim()));
     }
 
+    private logLoginSuccess(userId: string, provider: 'google' | 'password') {
+        this.logger.log(`AUTH_LOGIN_SUCCESS userId=${userId} provider=${provider}`);
+    }
+
+    private logLoginFailed(provider: 'google' | 'password', reason: string) {
+        this.logger.warn(`AUTH_LOGIN_FAILED provider=${provider} reason=${reason}`);
+    }
+
     private async verifyGoogleIdToken(
         idToken: string | undefined,
         invalidTokenError: string | { code: string; message: string },
@@ -206,6 +214,7 @@ export class AuthService {
         });
 
         if (!user) {
+            this.logLoginFailed('password', 'invalid_credentials');
             throw new UnauthorizedException({
                 error: "EMAIL_NOT_FOUND",
                 message: "You must be registered"
@@ -213,6 +222,7 @@ export class AuthService {
         }
 
         if (!user.passwordhash) {
+            this.logLoginFailed('password', 'provider_mismatch');
             throw new UnauthorizedException({
                 error: "NO_PASSWORD_USE_GOOGLE",
                 message: "This account uses Google login"
@@ -221,11 +231,14 @@ export class AuthService {
 
         const isValid = await bcrypt.compare(password, user.passwordhash);
         if (!isValid) {
+            this.logLoginFailed('password', 'invalid_credentials');
             throw new UnauthorizedException({
                 error: "WRONG_PASSWORD",
                 message: "Incorrect password"
             });
         }
+
+        this.logLoginSuccess(user.id, 'password');
 
         return {
             accessToken: this.jwtService.sign({
@@ -361,10 +374,16 @@ export class AuthService {
                 { expiresIn: "30d" }
             );
 
+            this.logLoginSuccess(user.id, 'google');
+
             return { accessToken, refreshToken };
         } catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
-            this.logger.warn(`Google login rejected: ${message}`);
+            const reason = e instanceof UnauthorizedException
+                ? 'invalid_credentials'
+                : e instanceof InternalServerErrorException
+                    ? 'provider_unavailable'
+                    : 'unexpected_error';
+            this.logLoginFailed('google', reason);
 
             if (e instanceof UnauthorizedException || e instanceof InternalServerErrorException) {
                 throw e;
