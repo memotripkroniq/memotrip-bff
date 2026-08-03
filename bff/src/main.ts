@@ -6,6 +6,7 @@ import "dotenv/config";
 
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { join } from "path";
+import { HttpLoggingInterceptor } from "./common/interceptors/http-logging.interceptor";
 
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -16,6 +17,7 @@ async function bootstrap() {
             transform: true,
         }),
     );
+    app.useGlobalInterceptors(new HttpLoggingInterceptor());
 
     const config = new DocumentBuilder()
         .setTitle("Memotrip API")
