@@ -121,6 +121,7 @@ export class MapRenderService {
             );
 
             return await mapLocator.screenshot({
+                timeout: 60_000,
                 type: "png",
             });
         } catch (error) {
