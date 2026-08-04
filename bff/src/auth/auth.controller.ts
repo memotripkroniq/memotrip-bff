@@ -11,6 +11,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { memoryStorage } from 'multer';
 import type { Express } from 'express';
 import {
@@ -42,26 +43,31 @@ export class AuthController {
     constructor(private authService: AuthService) {}
 
     @Post('signup')
+    @Throttle({ default: { limit: 5, ttl: 900_000 } })
     register(@Body() body: RegisterDto) {
         return this.authService.register(body);
     }
 
     @Post('login')
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     async login(@Body() dto: LoginDto) {
         return this.authService.login(dto.email, dto.password);
     }
 
     @Post('google')
+    @Throttle({ default: { limit: 10, ttl: 300_000 } })
     async google(@Body('idToken') idToken: string) {
         return this.authService.googleLogin(idToken);
     }
 
     @Post('forgot-password')
+    @Throttle({ default: { limit: 3, ttl: 900_000 } })
     async forgotPassword(@Body() dto: ForgotPasswordDto) {
         return this.authService.forgotPassword(dto.email);
     }
 
     @Post('reset-password')
+    @Throttle({ default: { limit: 5, ttl: 900_000 } })
     async resetPassword(@Body() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto.token, dto.newPassword);
     }

@@ -10,6 +10,7 @@ import { HttpLoggingInterceptor } from "./common/interceptors/http-logging.inter
 
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    app.set('trust proxy', 1);
 
     app.useGlobalPipes(
         new ValidationPipe({
