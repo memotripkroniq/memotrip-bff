@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
-import { memoryStorage } from 'multer';
 import type { Express } from 'express';
 import {
     ApiBearerAuth,
@@ -36,6 +35,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { imageUploadOptions, PROFILE_IMAGE_MAX_FILE_SIZE } from '../common/upload/image-upload-options';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -114,7 +114,7 @@ export class AuthController {
         },
     })
     @ApiOkResponse({ type: ProfileImageResponseDto })
-    @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+    @UseInterceptors(FileInterceptor('file', imageUploadOptions(PROFILE_IMAGE_MAX_FILE_SIZE)))
     async uploadProfilePhoto(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
         return this.authService.uploadProfilePhoto(req.user.sub, file);
     }

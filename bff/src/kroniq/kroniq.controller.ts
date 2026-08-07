@@ -11,7 +11,6 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import type { Express } from 'express';
 import {
     ApiBearerAuth,
@@ -31,6 +30,7 @@ import { KroniqMeResponseDto } from './dto/kroniq-me-response.dto';
 import { KroniqImageResponseDto } from './dto/kroniq-image-response.dto';
 import { RemoveKroniqMemberResponseDto } from './dto/remove-kroniq-member-response.dto';
 import { KroniqService } from './kroniq.service';
+import { imageUploadOptions, KRONIQ_IMAGE_MAX_FILE_SIZE } from '../common/upload/image-upload-options';
 
 @ApiTags('Kroniq')
 @Controller('kroniq')
@@ -61,7 +61,7 @@ export class KroniqController {
         },
     })
     @ApiOkResponse({ type: KroniqImageResponseDto })
-    @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+    @UseInterceptors(FileInterceptor('file', imageUploadOptions(KRONIQ_IMAGE_MAX_FILE_SIZE)))
     async uploadPhoto(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
         return this.kroniqService.uploadPhoto(req.user.sub, file);
     }

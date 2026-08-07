@@ -4,7 +4,6 @@ import { TripsService } from "./trips.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CreateTripDto } from "./dto/create-trip.dto";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { memoryStorage } from "multer";
 import type { Express } from "express";
 import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
 import { TripPhotosResponseDto } from "./dto/trip-photos-response.dto";
@@ -17,6 +16,11 @@ import { DeleteSuccessDto } from "./dto/delete-success.dto";
 import { TripDetailResponseDto } from "./dto/trip-detail-response.dto";
 import { TripKroniqShareResponseDto } from "./dto/trip-kroniq-share-response.dto";
 import { TripPhotoLimitResponseDto } from "./dto/trip-photo-limit-response.dto";
+import {
+    imageUploadOptions,
+    TRIP_COVER_MAX_FILE_SIZE,
+    TRIP_GALLERY_IMAGE_MAX_FILE_SIZE,
+} from "../common/upload/image-upload-options";
 
 
 @ApiTags("Trips")
@@ -120,7 +124,7 @@ export class TripsController {
             required: ["file"],
         },
     })
-    @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
+    @UseInterceptors(FileInterceptor("file", imageUploadOptions(TRIP_GALLERY_IMAGE_MAX_FILE_SIZE)))
     async uploadTripPhoto(
         @Req() req,
         @Param("tripId") tripId: string,
@@ -234,7 +238,7 @@ export class TripsController {
             required: ["file"],
         },
     })
-    @UseInterceptors(FileInterceptor("file", { storage: memoryStorage() }))
+    @UseInterceptors(FileInterceptor("file", imageUploadOptions(TRIP_COVER_MAX_FILE_SIZE)))
     async uploadCover(@Req() req, @UploadedFile() file: Express.Multer.File) {
         if (!file) {
             throw new BadRequestException("Missing file field (multipart name must be 'file')");
