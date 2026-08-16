@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
-import { PrismaClient } from '../prisma/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import {
     assertSafeSeedEnvironment,
     buildSeedTripData,

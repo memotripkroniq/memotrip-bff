@@ -1,7 +1,6 @@
 // src/prisma/prisma.service.ts
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-// importujeme klienta z vygenerované složky
-import { PrismaClient } from '../../prisma/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 
 @Injectable()
