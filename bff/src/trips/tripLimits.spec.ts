@@ -107,12 +107,18 @@ describe('tripLimits', () => {
 
         const result = await getTripLimitStatus(prisma, 'user-1', now);
 
-        expect(result.allowed).toBe(true);
-        expect(result.plan).toBe('kroniq');
-        expect(result.limit).toBe(30);
+        expect(result).toEqual({
+            allowed: true,
+            code: 'TRIP_LIMIT_OK',
+            plan: 'kroniq',
+            used: 29,
+            limit: null,
+            windowDays: 30,
+            windowStart: new Date('2026-04-01T00:00:00.000Z'),
+        });
     });
 
-    it('blocks kroniq users at the limit', async () => {
+    it('does not block kroniq users even with many trips', async () => {
         const prisma = {
             user: {
                 findUnique: jest.fn().mockResolvedValue({
@@ -127,9 +133,10 @@ describe('tripLimits', () => {
 
         const result = await getTripLimitStatus(prisma, 'user-1', now);
 
-        expect(result.allowed).toBe(false);
+        expect(result.allowed).toBe(true);
+        expect(result.code).toBe('TRIP_LIMIT_OK');
         expect(result.plan).toBe('kroniq');
-        expect(result.limit).toBe(30);
+        expect(result.limit).toBeNull();
     });
 
     it('counts trips from the start of the current UTC month', async () => {

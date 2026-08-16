@@ -2,7 +2,7 @@ type TripPlan = 'free' | 'premium' | 'kroniq';
 type TripLimitCode = 'TRIP_LIMIT_OK' | 'TRIP_LIMIT_REACHED';
 
 type TripPolicy = {
-    limit: number;
+    limit: number | null;
     windowDays: number;
 };
 
@@ -33,7 +33,7 @@ export type TripLimitStatus = {
     code: TripLimitCode;
     plan: TripPlan;
     used: number;
-    limit: number;
+    limit: number | null;
     windowDays: number;
     windowStart: Date;
 };
@@ -43,7 +43,7 @@ export const TRIP_LIMIT_WINDOW_DAYS = 30;
 export const TRIP_PLAN_POLICY: Record<TripPlan, TripPolicy> = {
     free: { limit: 1, windowDays: TRIP_LIMIT_WINDOW_DAYS },
     premium: { limit: 3, windowDays: TRIP_LIMIT_WINDOW_DAYS },
-    kroniq: { limit: 30, windowDays: TRIP_LIMIT_WINDOW_DAYS },
+    kroniq: { limit: null, windowDays: TRIP_LIMIT_WINDOW_DAYS },
 };
 
 export function getTripPlanFromUser(user: UserPlanFlags): TripPlan {
@@ -83,7 +83,7 @@ export async function getTripLimitStatus(
         },
     });
 
-    const allowed = used < policy.limit;
+    const allowed = policy.limit === null ? true : used < policy.limit;
 
     return {
         allowed,

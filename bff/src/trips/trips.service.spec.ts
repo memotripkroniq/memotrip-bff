@@ -73,6 +73,35 @@ describe('TripsService', () => {
         expect(prisma.trips.create).toHaveBeenCalled();
     });
 
+    it('creates a trip for kroniq users even when they already have many trips', async () => {
+        const { service, prisma } = createService({
+            user: {
+                findUnique: jest.fn().mockResolvedValue({
+                    isPremium: true,
+                    isKroniq: true,
+                }),
+            },
+            trips: {
+                count: jest.fn().mockResolvedValue(30),
+                create: jest.fn().mockResolvedValue({
+                    id: 'trip-1',
+                    name: createDto.name,
+                    createdAt: new Date('2026-04-22T12:00:00.000Z'),
+                    coverImageUrl: null,
+                    mapImageUrl: createDto.mapImageUrl,
+                    mapImageFullUrl: null,
+                }),
+            },
+        });
+
+        await expect(service.createTrip('user-1', createDto as any)).resolves.toMatchObject({
+            id: 'trip-1',
+            name: createDto.name,
+        });
+
+        expect(prisma.trips.create).toHaveBeenCalled();
+    });
+
     it('rejects photo upload when the free photo limit is reached', async () => {
         const prisma = {
             user: {

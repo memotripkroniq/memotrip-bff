@@ -75,6 +75,24 @@ npx prisma studio
 npx prisma validate
 ```
 
+# 🧪 Trip Limit Seed
+Bezpečný helper pro manuální/smoke testování limitů tripů bez klikání desítek tripů v aplikaci.
+
+Použití:
+```bash
+npm run seed:test-user -- --email=test@example.com --trips=0
+npm run seed:test-user -- --email=test@example.com --trips=3
+npm run seed:test-user -- --email=test@example.com --trips=30
+npm run seed:test-user -- --email=test@example.com --cleanup
+```
+
+Vlastnosti:
+- Pracuje pouze s existujícím uživatelem podle `email`.
+- Maže a znovu vytváří pouze tripy označené seed mechanizmem.
+- Seedované tripy jsou označené prefixem `[TEST-SEED][TRIP-LIMIT]`.
+- `createdAt` seedovaných tripů je nastavené od začátku aktuálního UTC měsíce, takže je trip-limit logika opravdu započítá.
+- Skript skončí chybou při produkčním prostředí (`NODE_ENV=production` a další production-like env flagy).
+
 # 📡 API Endpoints
 ## 👤 Auth
 | Method | Endpoint      | Description          | Body                          |

@@ -33,6 +33,7 @@ import { MeResponseDto } from './dto/me-response.dto';
 import { ProfileImageResponseDto } from './dto/profile-image-response.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { TripLimitResponseDto } from './dto/trip-limit-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { imageUploadOptions, PROFILE_IMAGE_MAX_FILE_SIZE } from '../common/upload/image-upload-options';
@@ -141,6 +142,8 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth('jwt')
     @Get('limits/trips')
+    @ApiOperation({ summary: 'Get current user trip creation limits' })
+    @ApiOkResponse({ type: TripLimitResponseDto })
     async tripLimits(@Req() req: any) {
         return this.authService.getTripLimits(req.user.sub);
     }
