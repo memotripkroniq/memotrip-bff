@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { PaymentsModule } from './payments/payments.module';
 import { TripsModule } from './trips/trips.module'; // ⬅️ PŘIDAT
 import { KroniqModule } from './kroniq/kroniq.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -19,6 +20,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ]),
     UsersModule,
     AuthModule,
+    PaymentsModule,
     TripsModule, // ⬅️ KLÍČOVÝ ŘÁDEK
     KroniqModule,
   ],
