@@ -29,6 +29,19 @@ integration('Auth sessions (real isolated PostgreSQL)', () => {
     let sessions: AuthSessionService;
     let otherSessions: AuthSessionService;
     const jwt = new JwtService({ secret: 'phase2a-test-only-secret', signOptions: { expiresIn: '7d' } });
+    // Same signer defaults and calls as dfa07bf AuthModule/AuthService. These are
+    // real HS256 JWTs, without the new issuer, audience, tokenUse or session ID.
+    const legacyJwt = new JwtService({ secret: 'phase2a-test-only-secret', signOptions: { expiresIn: '7d' } });
+    const legacyTokens = (userId: string, email: string, issuedAt = Math.floor(Date.now() / 1000)) => {
+        const clock = jest.spyOn(Date, 'now').mockReturnValue(issuedAt * 1000);
+        try {
+            return {
+                googleAccess: legacyJwt.sign({ sub: userId }, { expiresIn: '15m' }),
+                passwordAccess: legacyJwt.sign({ sub: userId, email }),
+                googleRefresh: legacyJwt.sign({ sub: userId }, { expiresIn: '30d' }),
+            };
+        } finally { clock.mockRestore(); }
+    };
     const oldEnv = { JWT_SECRET: process.env.JWT_SECRET, GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID, NODE_ENV: process.env.NODE_ENV, PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL };
     const createdUsers: string[] = [];
     let tokens: Awaited<ReturnType<AuthService['register']>>;
@@ -218,6 +231,118 @@ integration('Auth sessions (real isolated PostgreSQL)', () => {
         await me(tokens.refreshToken).expect(401);
         await refresh(tokens.accessToken).expect(401);
         await me(tokens.accessToken).expect(200);
+    });
+
+    it('reproduces all original signing profiles with actual JWT signatures', async () => {
+        const user = await db.user.findUniqueOrThrow({ where: { id: tokens.userId } });
+        const old = legacyTokens(user.id, user.email);
+        for (const [name, value] of Object.entries(old)) {
+            const payload = legacyJwt.verify(value);
+            expect(payload.sub).toBe(user.id);
+            expect(payload.exp - payload.iat).toBe(name === 'googleAccess' ? 900 : name === 'passwordAccess' ? 604800 : 2592000);
+            expect(Object.keys(payload).sort()).toEqual((name === 'passwordAccess' ? ['email', 'exp', 'iat', 'sub'] : ['exp', 'iat', 'sub']).sort());
+            expect((legacyJwt.decode(value, { complete: true }) as { header: { alg: string } }).header.alg).toBe('HS256');
+        }
+        await me(old.googleAccess).expect(200);
+        await me(old.passwordAccess).expect(200);
+        expect((await me(old.googleRefresh).expect(401)).body.code).toBe('ACCESS_TOKEN_INVALID');
+        expect((await refresh(old.googleRefresh).expect(401)).body.code).toBe('REFRESH_TOKEN_INVALID');
+    });
+
+    it.each([
+        ['googleAccess', 900], ['passwordAccess', 604800],
+    ] as const)('honors the original %s expiry exactly, without granting a fresh lifetime', async (profile, lifetime) => {
+        const user = await db.user.findUniqueOrThrow({ where: { id: tokens.userId } });
+        const issuedAt = Math.floor(Date.now() / 1000) - lifetime + 60;
+        const original = legacyTokens(user.id, user.email, issuedAt)[profile];
+        const payload = legacyJwt.verify(original);
+        expect(payload.exp).toBe(issuedAt + lifetime);
+        await me(original).expect(200);
+        const count = await db.authSession.count({ where: { userId: user.id } });
+        const clock = jest.spyOn(Date, 'now').mockReturnValue((payload.exp - 1) * 1000);
+        try {
+            await me(original).expect(200);
+            clock.mockReturnValue(payload.exp * 1000);
+            expect((await me(original).expect(401)).body.code).toBe('ACCESS_TOKEN_EXPIRED');
+            clock.mockReturnValue((payload.exp + 1) * 1000);
+            expect((await me(original).expect(401)).body.code).toBe('ACCESS_TOKEN_EXPIRED');
+            expect((await refresh(original).expect(401)).body.code).toBe('REFRESH_TOKEN_INVALID');
+        } finally { clock.mockRestore(); }
+        expect(await db.authSession.count({ where: { userId: user.id } })).toBe(count);
+    });
+
+    it('fails closed for a missing new session instead of falling back to legacy validation', async () => {
+        await db.authSession.delete({ where: { id: tokens.sessionId } });
+        expect((await me(tokens.accessToken).expect(401)).body.code).toBe('SESSION_REVOKED');
+        await refresh(tokens.refreshToken).expect(401);
+    });
+
+    it('fails closed when new session lookup is unavailable', async () => {
+        const lookup = jest.spyOn(db.authSession, 'findFirst').mockRejectedValueOnce(new Error('private-db-error'));
+        try {
+            const response = await me(tokens.accessToken).expect(503);
+            expect(response.body.code).toBe('AUTH_TEMPORARILY_UNAVAILABLE');
+            expect(JSON.stringify(response.body)).not.toContain('private-db-error');
+        } finally { lookup.mockRestore(); }
+    });
+
+    it('cannot downgrade a revoked new JWT by stripping modern claims without invalidating its signature', async () => {
+        await logout(tokens.refreshToken).expect(204);
+        const [header, encoded, signature] = tokens.accessToken.split('.');
+        const originalPayload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
+        for (const removed of [['sid'], ['tokenUse'], ['iss'], ['aud'], ['sid', 'tokenUse', 'iss', 'aud']]) {
+            const payload = { ...originalPayload };
+            for (const key of removed) delete payload[key];
+            const altered = `${header}.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.${signature}`;
+            expect((await me(altered).expect(401)).body.code).toBe('ACCESS_TOKEN_INVALID');
+            await refresh(altered).expect(401);
+        }
+        expect((await me(tokens.accessToken).expect(401)).body.code).toBe('SESSION_REVOKED');
+    });
+
+    // Explicit evidence of the approved migration limitation. Revoking a modern
+    // session does not revoke independently issued, sessionless legacy JWTs.
+    // A blanket requirement to revoke *all* old credentials is NOT satisfied.
+    it.each(['logout', 'replay', 'password-change', 'password-reset'] as const)(
+        'documents that independent legacy access JWTs still authorize after %s', async action => {
+            const user = await db.user.findUniqueOrThrow({ where: { id: tokens.userId } });
+            const old = legacyTokens(user.id, user.email);
+            if (action === 'logout') await logout(tokens.refreshToken).expect(204);
+            if (action === 'replay') {
+                await refresh(tokens.refreshToken).expect(200);
+                expect((await refresh(tokens.refreshToken).expect(401)).body.code).toBe('REFRESH_TOKEN_REUSED');
+            }
+            if (action === 'password-change') {
+                await auth.changePassword(user.id, { currentPassword: 'password123', newPassword: 'password456' });
+            }
+            if (action === 'password-reset') {
+                const token = randomUUID();
+                await db.passwordResetToken.create({ data: { userId: user.id, token, expiresAt: new Date(Date.now() + 60000) } });
+                await auth.resetPassword(token, 'password456');
+            }
+            expect((await me(tokens.accessToken).expect(401)).body.code).toBe('SESSION_REVOKED');
+            await refresh(tokens.refreshToken).expect(401);
+            await me(old.googleAccess).expect(200);
+            await me(old.passwordAccess).expect(200);
+            // Neither credential can be exchanged for a new session or token pair.
+            await refresh(old.googleAccess).expect(401);
+            await refresh(old.passwordAccess).expect(401);
+            await me(old.googleRefresh).expect(401);
+            await refresh(old.googleRefresh).expect(401);
+            // Legacy credentials retain normal ownership restrictions, even here.
+            const other = await signup();
+            const purchase = await request(app.getHttpServer()).post('/payments/dummy')
+                .auth(other.accessToken, { type: 'bearer' }).send({ plan: 'PREMIUM' }).expect(201);
+            await request(app.getHttpServer()).get(`/payments/dummy/${purchase.body.purchaseId}/status`)
+                .auth(old.passwordAccess, { type: 'bearer' }).expect(404);
+        },
+    );
+
+    it('rejects missing, empty and wrong-scheme Authorization headers with a stable code', async () => {
+        for (const authorization of ['', 'Bearer', 'Bearer ', `Basic ${tokens.accessToken}`]) {
+            const response = await request(app.getHttpServer()).get('/auth/me').set('Authorization', authorization).expect(401);
+            expect(response.body.code).toBe('ACCESS_TOKEN_INVALID');
+        }
     });
 
     it.each([
