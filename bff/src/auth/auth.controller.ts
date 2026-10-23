@@ -3,11 +3,14 @@ import {
     Controller,
     Delete,
     Get,
+    Header,
+    HttpCode,
     Patch,
     Post,
     Req,
     UploadedFile,
     UseGuards,
+    UseFilters,
     UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -17,6 +20,8 @@ import {
     ApiBearerAuth,
     ApiBody,
     ApiConsumes,
+    ApiCreatedResponse,
+    ApiNoContentResponse,
     ApiOkResponse,
     ApiOperation,
     ApiTags,
@@ -37,25 +42,55 @@ import { TripLimitResponseDto } from './dto/trip-limit-response.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { imageUploadOptions, PROFILE_IMAGE_MAX_FILE_SIZE } from '../common/upload/image-upload-options';
+import { AuthSessionService } from './auth-session.service';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { TokenResponseDto } from './dto/token-response.dto';
+import { AuthTokenExceptionFilter } from './auth-token-exception.filter';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) {}
+    constructor(private authService: AuthService, private sessions: AuthSessionService) {}
+
+    @Post('refresh')
+    @UseFilters(AuthTokenExceptionFilter)
+    @HttpCode(200)
+    @Header('Cache-Control', 'no-store')
+    @Throttle({ default: { limit: 20, ttl: 60_000 } })
+    @ApiOkResponse({ type: TokenResponseDto })
+    async refresh(@Body() body: RefreshTokenDto) {
+        return this.sessions.refresh(body.refreshToken);
+    }
+
+    @Post('logout')
+    @ApiNoContentResponse({ description: 'Session ended, or token was already unknown/invalid.' })
+    @UseFilters(AuthTokenExceptionFilter)
+    @HttpCode(204)
+    @Header('Cache-Control', 'no-store')
+    @Throttle({ default: { limit: 20, ttl: 60_000 } })
+    async logout(@Body() body: RefreshTokenDto): Promise<void> {
+        await this.sessions.logout(body.refreshToken);
+    }
 
     @Post('signup')
+    @Header('Cache-Control', 'no-store')
+    @ApiCreatedResponse({ type: TokenResponseDto })
     @Throttle({ default: { limit: 5, ttl: 900_000 } })
     register(@Body() body: RegisterDto) {
         return this.authService.register(body);
     }
 
     @Post('login')
+    @Header('Cache-Control', 'no-store')
+    @ApiCreatedResponse({ type: TokenResponseDto })
     @Throttle({ default: { limit: 5, ttl: 60_000 } })
     async login(@Body() dto: LoginDto) {
         return this.authService.login(dto.email, dto.password);
     }
 
     @Post('google')
+    @Header('Cache-Control', 'no-store')
+    @ApiCreatedResponse({ type: TokenResponseDto })
     @Throttle({ default: { limit: 10, ttl: 300_000 } })
     async google(@Body('idToken') idToken: string) {
         return this.authService.googleLogin(idToken);

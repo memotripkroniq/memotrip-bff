@@ -94,6 +94,10 @@ Vlastnosti:
 - Skript skončí chybou při produkčním prostředí (`NODE_ENV=production` a další production-like env flagy).
 
 # 📡 API Endpoints
+
+Session, refresh/logout kontrakt pro Android a bezpečný přechod JWT popisuje
+[fáze autentizace 2A](docs/auth-sessions.md).
+
 ## 👤 Auth
 | Method | Endpoint      | Description          | Body                          |
 |--------|---------------|----------------------|-------------------------------|

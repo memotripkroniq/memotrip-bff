@@ -13,7 +13,7 @@ describe('Legacy UsersController authorization', () => {
     let app: INestApplication;
     const originalSecret = process.env.JWT_SECRET;
     const jwt = new JwtService({ secret: 'users-test-secret' });
-    const safe = { id: 'user-a', email: 'a@example.com', name: 'A', country: 'EN' };
+    const safe = { id: '550e8400-e29b-41d4-a716-446655440001', email: 'a@example.com', name: 'A', country: 'EN' };
     const users = { findAll: jest.fn(), createUser: jest.fn(), validateUser: jest.fn() };
     const prisma = { user: { findFirst: jest.fn() } };
     beforeAll(async () => {
@@ -47,11 +47,11 @@ describe('Legacy UsersController authorization', () => {
     });
     it('rejects a deleted or missing account', async () => {
         prisma.user.findFirst.mockResolvedValue(null);
-        await request(app.getHttpServer()).get('/users').auth(jwt.sign({ sub: safe.id }), { type: 'bearer' }).expect(401);
+        await request(app.getHttpServer()).get('/users').auth(jwt.sign({ sub: safe.id }, { expiresIn: '15m' }), { type: 'bearer' }).expect(401);
         expect(users.findAll).not.toHaveBeenCalled();
     });
     it('uses JWT identity rather than a requested foreign account', async () => {
-        await request(app.getHttpServer()).get('/users?userId=user-b').auth(jwt.sign({ sub: safe.id }), { type: 'bearer' }).expect(200, [safe]);
+        await request(app.getHttpServer()).get('/users?userId=user-b').auth(jwt.sign({ sub: safe.id }, { expiresIn: '15m' }), { type: 'bearer' }).expect(200, [safe]);
         expect(users.findAll).toHaveBeenCalledWith(safe.id);
     });
     it('preserves public create and login response envelopes', async () => {

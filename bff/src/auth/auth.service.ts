@@ -1,12 +1,12 @@
 import {
     BadRequestException,
     ForbiddenException,
+    HttpException,
     Injectable,
     InternalServerErrorException,
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import type { TokenPayload } from 'google-auth-library';
 import * as bcrypt from 'bcryptjs';
@@ -20,6 +20,8 @@ import { DeleteAccountDto } from './dto/delete-account.dto';
 import { RegisterDto } from './dto/register.dto';
 import { sendResetPasswordEmail } from './send-reset-password-email';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { AuthSessionService, authUnauthorized, lockAuthUser, revokeUserSessions } from './auth-session.service';
+import { GOOGLE_ACCESS_SECONDS, PASSWORD_ACCESS_SECONDS } from './auth-tokens';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +30,7 @@ export class AuthService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly jwtService: JwtService,
+        private readonly sessions: AuthSessionService,
     ) {
         this.googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     }
@@ -196,9 +198,7 @@ export class AuthService {
             },
         });
 
-        return {
-            accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
-        };
+        return this.sessions.create(user.id, PASSWORD_ACCESS_SECONDS, hashed);
     }
 
     async login(email: string, password: string) {
@@ -238,12 +238,7 @@ export class AuthService {
 
         this.logLoginSuccess(user.id, 'password');
 
-        return {
-            accessToken: this.jwtService.sign({
-                sub: user.id,
-                email: user.email,
-            }),
-        };
+        return this.sessions.create(user.id, PASSWORD_ACCESS_SECONDS, user.passwordhash);
     }
 
     async forgotPassword(email: string) {
@@ -321,15 +316,25 @@ export class AuthService {
 
         const passwordhash = await bcrypt.hash(newPassword, 10);
 
-        await this.prisma.$transaction([
-            this.prisma.user.update({
+        await this.prisma.$transaction(async tx => {
+            await lockAuthUser(tx, record.userId);
+            const currentToken = await tx.passwordResetToken.findUnique({ where: { token: cleanToken } });
+            const currentUser = await tx.user.findUnique({ where: { id: record.userId } });
+            if (!currentToken || currentToken.expiresAt <= new Date() || !currentUser || currentUser.deletedAt) {
+                throw new BadRequestException('Invalid or expired token');
+            }
+            if (currentUser.passwordhash && await bcrypt.compare(newPassword, currentUser.passwordhash)) {
+                throw new BadRequestException('New password must be different from current password');
+            }
+            await tx.user.update({
                 where: { id: record.userId },
                 data: { passwordhash },
-            }),
-            this.prisma.passwordResetToken.deleteMany({
+            });
+            await tx.passwordResetToken.deleteMany({
                 where: { userId: record.userId },
-            }),
-        ]);
+            });
+            await revokeUserSessions(tx, record.userId);
+        });
 
         return { success: true };
     }
@@ -361,19 +366,11 @@ export class AuthService {
                 });
             }
 
-            const accessToken = this.jwtService.sign(
-                { sub: user.id },
-                { expiresIn: "15m" }
-            );
-
-            const refreshToken = this.jwtService.sign(
-                { sub: user.id },
-                { expiresIn: "30d" }
-            );
+            const tokens = await this.sessions.create(user.id, GOOGLE_ACCESS_SECONDS);
 
             this.logLoginSuccess(user.id, 'google');
 
-            return { accessToken, refreshToken };
+            return tokens;
         } catch (e) {
             const reason = e instanceof UnauthorizedException
                 ? 'invalid_credentials'
@@ -382,7 +379,7 @@ export class AuthService {
                     : 'unexpected_error';
             this.logLoginFailed('google', reason);
 
-            if (e instanceof UnauthorizedException || e instanceof InternalServerErrorException) {
+            if (e instanceof HttpException) {
                 throw e;
             }
 
@@ -494,11 +491,14 @@ export class AuthService {
 
         const newPasswordHash = await bcrypt.hash(body.newPassword, 10);
 
-        await this.prisma.user.update({
-            where: { id: userId },
-            data: {
-                passwordhash: newPasswordHash,
-            },
+        await this.prisma.$transaction(async tx => {
+            await lockAuthUser(tx, userId);
+            const current = await tx.user.findUnique({ where: { id: userId } });
+            if (!current || current.deletedAt || current.passwordhash !== user.passwordhash) {
+                throw authUnauthorized('ACCESS_TOKEN_INVALID');
+            }
+            await tx.user.update({ where: { id: userId }, data: { passwordhash: newPasswordHash } });
+            await revokeUserSessions(tx, userId);
         });
 
         return {
@@ -675,6 +675,12 @@ export class AuthService {
         const deletedEmail = `deleted+${user.id}@deleted.memotrip.local`;
 
         await this.prisma.$transaction(async (tx) => {
+            await lockAuthUser(tx, userId);
+            const current = await tx.user.findUnique({ where: { id: userId } });
+            if (!current || current.deletedAt || current.passwordhash !== user.passwordhash) {
+                throw authUnauthorized('ACCESS_TOKEN_INVALID');
+            }
+            await revokeUserSessions(tx, userId);
             await tx.groups.deleteMany({
                 where: { adminId: userId },
             });

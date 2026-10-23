@@ -118,6 +118,32 @@ model User {
   Purchase            Purchase[]
   TripShares          TripShares[]
   Trips               Trips[]
+  AuthSessions        AuthSession[]
+}
+
+model AuthSession {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String         @db.Uuid
+  accessTtlSeconds Int
+  createdAt        DateTime       @default(now()) @db.Timestamp(6)
+  expiresAt        DateTime       @db.Timestamp(6)
+  revokedAt        DateTime?      @db.Timestamp(6)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  refreshTokens    RefreshToken[]
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId  String      @db.Uuid
+  tokenHash  String      @unique @db.Char(64)
+  createdAt  DateTime    @default(now()) @db.Timestamp(6)
+  consumedAt DateTime?   @db.Timestamp(6)
+  session    AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sessionId])
 }
 
 model PasswordResetToken {
