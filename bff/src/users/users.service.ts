@@ -1,55 +1,45 @@
-// src/users/users.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import { UserResponseDto, userResponseSelect } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
     constructor(private prisma: PrismaService) {}
 
-    // vytvoření uživatele
     async createUser(data: { email: string; password: string; name: string; country: string }) {
         const hashedPassword = await bcrypt.hash(data.password, 10);
-        return this.prisma.user.create({
+        const user = await this.prisma.user.create({
             data: {
                 email: data.email,
-                passwordhash: hashedPassword,  // upraveno podle modelu
+                passwordhash: hashedPassword,
                 name: data.name,
                 country: data.country,
             },
+            select: userResponseSelect,
         });
+        return UserResponseDto.from(user);
     }
 
-    // získání všech uživatelů
-    async findAll() {
-        return this.prisma.user.findMany();
-    }
-
-    // hledání uživatele podle e-mailu
-    async findUserByEmail(email: string) {
-        return this.prisma.user.findUnique({
-            where: { email },
-        });
-    }
-
-    // ověření uživatele (login)
-    async validateUser(email: string, password: string) {
-        console.log("👤 VALIDATE USER:", email);
-
-        const user = await this.findUserByEmail(email);
-        console.log("🔎 USER:", user);
-
-        if (!user) return null;
-
-        if (!user.passwordhash) {
-            console.log("⚠️ USER HAS NO PASSWORD (Google?)");
-            return null;
+    // Preserve the legacy array shape without exposing other accounts.
+    async findAll(userId: string) {
+        if (!userId || typeof userId !== 'string') {
+            throw new UnauthorizedException();
         }
-
-        const isPasswordValid = await bcrypt.compare(password, user.passwordhash);
-        console.log("🔐 PASSWORD VALID:", isPasswordValid);
-
-        return isPasswordValid ? user : null;
+        const users = await this.prisma.user.findMany({
+            where: { id: userId, deletedAt: null },
+            select: userResponseSelect,
+        });
+        return users.map(UserResponseDto.from);
     }
 
+    async validateUser(email: string, password: string) {
+        const user = await this.prisma.user.findFirst({
+            where: { email, deletedAt: null },
+            select: { ...userResponseSelect, passwordhash: true },
+        });
+        if (!user?.passwordhash) return null;
+        const isPasswordValid = await bcrypt.compare(password, user.passwordhash);
+        return isPasswordValid ? UserResponseDto.from(user) : null;
+    }
 }

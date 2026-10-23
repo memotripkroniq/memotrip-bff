@@ -1,15 +1,19 @@
 // src/users/users.controller.ts
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
 
-    // GET /users → vrátí všechny uživatele
+    // Intentionally not registered in UsersModule. Keep future reads account-scoped.
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
     @Get()
-    findAll() {
-        return this.usersService.findAll();
+    findAll(@Req() req: { user: { sub: string } }) {
+        return this.usersService.findAll(req.user.sub);
     }
 
     // POST /users → vytvoření nového uživatele

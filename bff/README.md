@@ -104,7 +104,20 @@ Vlastnosti:
 ## 🧑‍🤝‍🧑 Users
 | Method | Endpoint   | Description                           |
 |--------|------------|-------------------------------------- |
-| GET    | /users/me  | Vrátí informace o sobě (JWT required) |
+| GET    | /auth/me   | Vrátí informace o sobě (JWT required) |
+
+`UsersController` je legacy kód a není registrovaný v `UsersModule` ani v jiném
+aplikačním modulu. `/users`, `/users/login` a `/users/me` proto nejsou dostupné
+API. Přihlášení a registrace používají `/auth/login`, `/auth/google` a `/auth/signup`.
+V tomto backendovém repozitáři nejsou klientská volání legacy `/users` endpointů;
+případné externí klienty je nutné ověřit samostatně.
+
+Pokud bude legacy controller někdy záměrně registrován, `GET /users` vyžaduje JWT
+a vrací pouze vlastní aktivní profil v poli, nikoliv seznam všech uživatelů.
+`POST /users` a `/users/login` zůstávají veřejné registrační/přihlašovací operace.
+Jejich uživatelská odpověď obsahuje pouze `id`, `email`, `name`, `country`;
+heslový hash, provider ID a další interní atributy se nevracejí. Legacy login
+zachovává `{ success, user }` nebo `{ success: false, message }` a nevydává JWT.
 
 ## 🧭 Trips
 | Method | Endpoint      | Description       |

@@ -81,8 +81,7 @@ export class AuthService {
                 throw error;
             }
 
-            const message = error instanceof Error ? error.message : String(error);
-            this.logger.warn(`Google ID token verification failed: ${message}`);
+            this.logger.warn('Google ID token verification failed');
             throw new UnauthorizedException(invalidTokenError);
         }
     }
@@ -124,8 +123,7 @@ export class AuthService {
         try {
             await deletePublicFile(url);
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            this.logger.warn(`Failed to delete account asset from R2: ${message}`);
+            this.logger.warn('Failed to delete account asset from R2');
         }
     }
 
@@ -286,8 +284,7 @@ export class AuthService {
         try {
             await sendResetPasswordEmail(user.email, token);
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            this.logger.warn(`Failed to send password reset email: ${message}`);
+            this.logger.warn('Failed to send password reset email');
         }
 
         return { success: true };
