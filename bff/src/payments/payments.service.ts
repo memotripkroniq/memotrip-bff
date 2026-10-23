@@ -211,6 +211,26 @@ export class PaymentsService {
         return purchase;
     }
 
+    async getDummyPaymentStatus(userId: string, purchaseId: string) {
+        this.assertDummyPayEnabled();
+
+        const purchase = await this.prisma.purchase.findFirst({
+            where: { id: purchaseId, userId, provider: PurchaseProvider.DUMMY_PAY },
+            select: { id: true, provider: true, status: true, plan: true },
+        });
+
+        if (!purchase) {
+            throw new NotFoundException('DummyPay purchase not found');
+        }
+
+        return {
+            purchaseId: purchase.id,
+            provider: purchase.provider,
+            status: purchase.status,
+            plan: purchase.plan,
+        };
+    }
+
     async createDummyPayment(userId: string, plan: PurchasePlan) {
         this.assertDummyPayEnabled();
 

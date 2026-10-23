@@ -34,7 +34,7 @@ describe('PaymentsService', () => {
                 create: jest.fn(),
                 findFirst: jest.fn(),
             },
-            $transaction: jest.fn(async (callback: (tx: typeof tx) => Promise<unknown>) => callback(tx)),
+            $transaction: jest.fn(async (callback: (transaction: typeof tx) => Promise<unknown>) => callback(tx)),
         };
 
         return {
@@ -43,6 +43,33 @@ describe('PaymentsService', () => {
             service: new PaymentsService(prisma as any),
         };
     }
+
+    it.each(Object.values(PurchaseStatus))('reads %s without writing or exposing private fields', async (status) => {
+        const { prisma, tx, service } = createService();
+        prisma.purchase.findFirst.mockResolvedValue({
+            id: 'purchase-status', provider: PurchaseProvider.DUMMY_PAY, status,
+            plan: PurchasePlan.KRONIQ, accessTokenHash: 'private', userId: 'user-status',
+        });
+
+        await expect(service.getDummyPaymentStatus('user-status', 'purchase-status')).resolves.toEqual({
+            purchaseId: 'purchase-status', provider: PurchaseProvider.DUMMY_PAY,
+            status, plan: PurchasePlan.KRONIQ,
+        });
+        expect(prisma.purchase.findFirst).toHaveBeenCalledWith({
+            where: { id: 'purchase-status', userId: 'user-status', provider: PurchaseProvider.DUMMY_PAY },
+            select: { id: true, provider: true, status: true, plan: true },
+        });
+        expect(prisma.purchase.create).not.toHaveBeenCalled();
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        expect(tx.purchase.updateMany).not.toHaveBeenCalled();
+        expect(tx.user.update).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when no owned DummyPay purchase matches', async () => {
+        const { prisma, service } = createService();
+        prisma.purchase.findFirst.mockResolvedValue(null);
+        await expect(service.getDummyPaymentStatus('user', 'missing')).rejects.toBeInstanceOf(NotFoundException);
+    });
 
     it('creates a PENDING PREMIUM DummyPay purchase with backend-defined price', async () => {
         const { prisma, service } = createService();
