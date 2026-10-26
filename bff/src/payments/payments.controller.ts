@@ -106,7 +106,7 @@ export class PaymentsController {
     @Header('Content-Type', 'text/html; charset=utf-8')
     @ApiExcludeEndpoint()
     async getDummyPaymentPage(
-        @Param('purchaseId') purchaseId: string,
+        @Param('purchaseId', new ParseUUIDPipe()) purchaseId: string,
         @Query('token') token?: string,
     ) {
         return this.paymentsService.renderDummyPaymentPage(purchaseId, token);
@@ -116,7 +116,7 @@ export class PaymentsController {
     @Header('Content-Type', 'text/html; charset=utf-8')
     @ApiExcludeEndpoint()
     async resolveDummyPayment(
-        @Param('purchaseId') purchaseId: string,
+        @Param('purchaseId', new ParseUUIDPipe()) purchaseId: string,
         @Query('token') token: string | undefined,
         @Body() body: ResolveDummyPaymentDto,
     ) {

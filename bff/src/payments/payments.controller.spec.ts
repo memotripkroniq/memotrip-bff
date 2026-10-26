@@ -82,6 +82,43 @@ describe('PaymentsController HTTP', () => {
         expect(prisma.purchase.findFirst).not.toHaveBeenCalled();
     });
 
+    it.each([undefined, 'invalid-payment-token'])('rejects malformed HTML purchaseId before Prisma (token: %s)', async paymentToken => {
+        // Reproduce the database failure if validation ever lets a malformed ID through.
+        prisma.purchase.findFirst.mockRejectedValue(new Error('invalid input syntax for type uuid'));
+        const query = paymentToken ? `?token=${paymentToken}` : '';
+        const response = await request(app.getHttpServer())
+            .get(`/payments/dummy/not-a-recovery-route${query}`).expect(400);
+        expect(response.body.statusCode).toBe(400);
+        expect(prisma.purchase.findFirst).not.toHaveBeenCalled();
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, 'invalid-payment-token'])('rejects malformed resolve purchaseId before Prisma (token: %s)', async paymentToken => {
+        prisma.purchase.findFirst.mockRejectedValue(new Error('invalid input syntax for type uuid'));
+        const query = paymentToken ? `?token=${paymentToken}` : '';
+        await request(app.getHttpServer()).post(`/payments/dummy/not-a-uuid/resolve${query}`)
+            .type('form').send({ result: 'APPROVED' }).expect(400);
+        expect(prisma.purchase.findFirst).not.toHaveBeenCalled();
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it.each(['continue', 'cancel'])('retains UUID validation on authenticated %s', async action => {
+        await request(app.getHttpServer()).post(`/payments/dummy/not-a-uuid/${action}`)
+            .auth(token, { type: 'bearer' }).expect(400);
+        expect(prisma.purchase.findFirst).not.toHaveBeenCalled();
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, 'invalid-payment-token'])('retains token protection for valid UUID (token: %s)', async paymentToken => {
+        const query = paymentToken ? `?token=${paymentToken}` : '';
+        await request(app.getHttpServer()).get(`/payments/dummy/${purchaseId}${query}`).expect(404);
+        await request(app.getHttpServer()).post(`/payments/dummy/${purchaseId}/resolve${query}`)
+            .type('form').send({ result: 'APPROVED' }).expect(404);
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+        expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
     it('requires JWT even when a payment URL token is supplied', async () => {
         await request(app.getHttpServer()).get(`/payments/dummy/${purchaseId}/status?token=payment-token`).expect(401);
         expect(prisma.purchase.findFirst).not.toHaveBeenCalled();
