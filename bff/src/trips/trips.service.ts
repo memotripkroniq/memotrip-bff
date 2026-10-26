@@ -8,6 +8,7 @@ import { deletePublicFile, uploadTripCover, uploadTripGalleryPhoto } from "../st
 import { ForbiddenException } from "@nestjs/common";
 import { getTripPhotoLimitStatus } from "./photoLimits";
 import { getTripLimitStatus } from "./tripLimits";
+import { Prisma } from '@prisma/client';
 import { UpdateTripDetailDto } from "./dto/update-trip-detail.dto";
 import { CreateTripPhotoCategoryDto } from "./dto/create-trip-photo-category.dto";
 import { UpdateTripPhotoCategoryDto } from "./dto/update-trip-photo-category.dto";
@@ -447,54 +448,69 @@ export class TripsService {
     // ➕ CREATE TRIP
     // ─────────────────────────────
     async createTrip(ownerId: string, dto: CreateTripDto) {
-        const limit = await getTripLimitStatus(this.prisma, ownerId);
+        return this.prisma.$transaction(async (tx) => {
+            // Bound the SQL lock wait itself; the interactive timeout alone cannot cancel it promptly.
+            await tx.$executeRaw`SET LOCAL lock_timeout = '2s'`;
+            // Separate namespace from payments. The transaction owns both the lock and insert.
+            await tx.$queryRaw`SELECT pg_advisory_xact_lock(1297372250, hashtext(${ownerId}::uuid::text))::text AS lock`;
+            // now() is the transaction start time, possibly in the previous month after waiting.
+            // Use one post-lock DB timestamp for both the policy window and persisted createdAt.
+            const [clock] = await tx.$queryRaw<Array<{ now: Date }>>`
+                SELECT date_trunc('milliseconds', clock_timestamp() AT TIME ZONE 'UTC') AS "now"`;
+            const limit = await getTripLimitStatus(tx, ownerId, clock.now);
 
-        if (!limit.allowed) {
-            throw new ForbiddenException({
-                code: "TRIP_LIMIT_REACHED",
-                message: "Trip creation limit reached for the current billing window",
-                plan: limit.plan,
-                used: limit.used,
-                limit: limit.limit,
-                windowDays: limit.windowDays,
-                windowStart: limit.windowStart,
-            });
-        }
+            if (!limit.allowed) {
+                throw new ForbiddenException({
+                    code: "TRIP_LIMIT_REACHED",
+                    message: "Trip creation limit reached for the current billing window",
+                    plan: limit.plan,
+                    used: limit.used,
+                    limit: limit.limit,
+                    windowDays: limit.windowDays,
+                    windowStart: limit.windowStart,
+                });
+            }
 
-        // 2) Create trip
-        const trip = await this.prisma.trips.create({
-            data: {
-                name: dto.name,
-                destination: dto.destination,
-                transport: dto.transport,
-                from: dto.from,
-                to: dto.to,
-                waypoints: dto.waypoints ?? [],
-                theme: dto.theme ?? null,
-                startDate: new Date(dto.dateFrom),
-                endDate: new Date(dto.dateTo),
-                coverImageUrl: dto.coverImageUrl ?? null,
-                mapImageUrl: dto.mapImageUrl ?? null,
-                mapImageFullUrl: dto.mapImageFullUrl ?? null,
-                isSharedInKroniQ: false,
+            // 2) Create trip
+            const trip = await tx.trips.create({
+                data: {
+                    createdAt: clock.now,
+                    name: dto.name,
+                    destination: dto.destination,
+                    transport: dto.transport,
+                    from: dto.from,
+                    to: dto.to,
+                    waypoints: dto.waypoints ?? [],
+                    theme: dto.theme ?? null,
+                    startDate: new Date(dto.dateFrom),
+                    endDate: new Date(dto.dateTo),
+                    coverImageUrl: dto.coverImageUrl ?? null,
+                    mapImageUrl: dto.mapImageUrl ?? null,
+                    mapImageFullUrl: dto.mapImageFullUrl ?? null,
+                    isSharedInKroniQ: false,
 
 
-                User: {
-                    connect: {
-                        id: ownerId,
+                    User: {
+                        connect: {
+                            id: ownerId,
+                        },
                     },
                 },
-            },
-        });
+            });
 
-        return {
-            id: trip.id,
-            name: trip.name,
-            createdAt: trip.createdAt,
-            coverImageUrl: trip.coverImageUrl, // (můžeš vracet z tripu, je to jistější než dto)
-            mapImageUrl: trip.mapImageUrl ?? null,
-            mapImageFullUrl: trip.mapImageFullUrl ?? null,
-        };
+            return {
+                id: trip.id,
+                name: trip.name,
+                createdAt: trip.createdAt,
+                coverImageUrl: trip.coverImageUrl, // (můžeš vracet z tripu, je to jistější než dto)
+                mapImageUrl: trip.mapImageUrl ?? null,
+                mapImageFullUrl: trip.mapImageFullUrl ?? null,
+            };
+        }, {
+            isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+            maxWait: 2000,
+            timeout: 5000,
+        });
     }
 
     // ─────────────────────────────

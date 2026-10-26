@@ -15,6 +15,8 @@ describe('TripsService', () => {
 
     function createService(prismaOverrides?: Partial<any>) {
         const prisma = {
+            $executeRaw: jest.fn().mockResolvedValue(0),
+            $queryRaw: jest.fn().mockResolvedValue([{ now: new Date('2026-04-22T12:00:00Z') }]),
             user: {
                 findUnique: jest.fn().mockResolvedValue({
                     isPremium: false,
@@ -35,6 +37,7 @@ describe('TripsService', () => {
             ...prismaOverrides,
         };
 
+        (prisma as any).$transaction = jest.fn(callback => callback(prisma));
         const service = new TripsService(prisma as any, {} as any);
         return { service, prisma };
     }
@@ -71,6 +74,34 @@ describe('TripsService', () => {
         });
 
         expect(prisma.trips.create).toHaveBeenCalled();
+    });
+
+    it('uses one transaction, a post-lock UTC clock and explicit transaction options', async () => {
+        const { service, prisma } = createService();
+        const instant = new Date('2026-05-01T00:00:00Z');
+        prisma.$queryRaw.mockResolvedValueOnce([{ lock: '' }]).mockResolvedValueOnce([{ now: instant }]);
+        await service.createTrip('user-1', createDto as any);
+        expect((prisma as any).$transaction).toHaveBeenCalledWith(expect.any(Function), {
+            isolationLevel: 'ReadCommitted', maxWait: 2000, timeout: 5000,
+        });
+        expect(prisma.$queryRaw.mock.calls[0][0].join('?')).toContain('pg_advisory_xact_lock(1297372250');
+        expect(prisma.$queryRaw.mock.calls[0][1]).toBe('user-1');
+        expect(prisma.$executeRaw.mock.calls[0][0].join('')).toContain("SET LOCAL lock_timeout = '2s'");
+        expect(prisma.trips.count).toHaveBeenCalledWith({ where: {
+            ownerId: 'user-1', createdAt: { gte: instant },
+        } });
+        expect(prisma.trips.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({ createdAt: instant }),
+        }));
+        expect(prisma.$queryRaw.mock.invocationCallOrder[1]).toBeLessThan(prisma.trips.count.mock.invocationCallOrder[0]);
+    });
+
+    it('does not turn lock timeout or database failures into a limit rejection', async () => {
+        const { service, prisma } = createService();
+        const failure = new Error('database timeout');
+        prisma.$queryRaw.mockRejectedValueOnce(failure);
+        await expect(service.createTrip('user-1', createDto as any)).rejects.toBe(failure);
+        expect(prisma.trips.create).not.toHaveBeenCalled();
     });
 
     it('creates a trip for kroniq users even when they already have many trips', async () => {
