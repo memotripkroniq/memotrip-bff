@@ -1,4 +1,5 @@
 import {
+    ConflictException,
     Injectable,
     InternalServerErrorException,
     NotFoundException,
@@ -298,37 +299,88 @@ export class PaymentsService {
         });
     }
 
+    async getPendingDummyPayments(userId: string, limit = 20, cursor?: string) {
+        this.assertDummyPayEnabled();
+        const purchases = await this.prisma.purchase.findMany({
+            where: {
+                userId, provider: PurchaseProvider.DUMMY_PAY, status: PurchaseStatus.PENDING,
+                ...(cursor ? { id: { lt: cursor } } : {}),
+            },
+            // UUID keyset pagination survives a cursor purchase being resolved/deleted and
+            // avoids loss of PostgreSQL timestamp(6) precision in JavaScript Date cursors.
+            orderBy: { id: 'desc' },
+            take: limit + 1,
+            select: { id: true, provider: true, status: true, plan: true, createdAt: true },
+        });
+        const page = purchases.slice(0, limit);
+        return {
+            items: page.map(purchase => ({
+                purchaseId: purchase.id, provider: purchase.provider, status: purchase.status,
+                plan: purchase.plan, createdAt: purchase.createdAt,
+            })),
+            nextCursor: purchases.length > limit ? page[page.length - 1].id : null,
+        };
+    }
+
+    private pendingPurchaseConflict() {
+        return new ConflictException({
+            statusCode: 409, code: 'DUMMY_PAY_PENDING_EXISTS',
+            message: 'A pending DummyPay purchase already exists.',
+        });
+    }
+
     async createDummyPayment(userId: string, plan: PurchasePlan) {
         this.assertDummyPayEnabled();
+        const baseUrl = this.getPublicBaseUrl();
 
         const price = DUMMY_PAY_PRICES[plan];
         const token = this.createOpaqueToken();
         const accessTokenHash = this.createTokenHash(token);
 
-        const purchase = await this.prisma.purchase.create({
-            data: {
-                userId,
-                plan,
-                provider: PurchaseProvider.DUMMY_PAY,
-                status: PurchaseStatus.PENDING,
-                amount: price.amount,
-                currency: price.currency,
-                providerReference: null,
-                accessTokenHash,
-                resolvedAt: null,
-            },
-            select: {
-                id: true,
-                provider: true,
-                status: true,
-                plan: true,
-                amount: true,
-                currency: true,
-            },
+        const purchase = await this.prisma.$transaction(async (tx) => {
+            // Transaction-scoped, shared by all instances. Hash collisions only serialize
+            // unrelated users; no purchase or user rows are modified by the lock.
+            await tx.$queryRaw`SELECT pg_advisory_xact_lock(1297372249, hashtext(${userId}::uuid::text))::text AS lock`;
+            const existing = await tx.purchase.findFirst({
+                where: { userId, provider: PurchaseProvider.DUMMY_PAY, status: PurchaseStatus.PENDING },
+                select: { id: true },
+            });
+            if (existing) throw this.pendingPurchaseConflict();
+            return tx.purchase.create({
+                data: {
+                    userId,
+                    plan,
+                    provider: PurchaseProvider.DUMMY_PAY,
+                    status: PurchaseStatus.PENDING,
+                    amount: price.amount,
+                    currency: price.currency,
+                    providerReference: null,
+                    accessTokenHash,
+                    resolvedAt: null,
+                },
+                select: {
+                    id: true,
+                    provider: true,
+                    status: true,
+                    plan: true,
+                    amount: true,
+                    currency: true,
+                },
+            });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted }).catch(error => {
+            // Forward-compatible with the approved future partial unique index. Do not
+            // mask unrelated uniqueness violations (e.g. the purchase primary key).
+            const target = error instanceof Prisma.PrismaClientKnownRequestError ? error.meta?.target : undefined;
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002' &&
+                (target === 'Purchase_dummy_pending_user_unique' ||
+                    (Array.isArray(target) && target.length === 1 && target[0] === 'userId'))) {
+                throw this.pendingPurchaseConflict();
+            }
+            throw error;
         });
 
         const paymentUrl =
-            `${this.getPublicBaseUrl()}/payments/dummy/${purchase.id}` +
+            `${baseUrl}/payments/dummy/${purchase.id}` +
             `?token=${encodeURIComponent(token)}`;
 
         return {

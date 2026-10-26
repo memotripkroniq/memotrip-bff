@@ -3,6 +3,7 @@ import {
     ApiBearerAuth,
     ApiBadRequestResponse,
     ApiCreatedResponse,
+    ApiConflictResponse,
     ApiExcludeEndpoint,
     ApiNotFoundResponse,
     ApiOperation,
@@ -18,6 +19,7 @@ import { ResolveDummyPaymentDto } from './dto/resolve-dummy-payment.dto';
 import { PaymentsService } from './payments.service';
 import { DummyPaymentStatusResponseDto } from './dto/dummy-payment-status-response.dto';
 import { ContinueDummyPaymentResponseDto } from './dto/continue-dummy-payment-response.dto';
+import { PendingDummyPaymentsQueryDto, PendingDummyPaymentsResponseDto } from './dto/pending-dummy-payments.dto';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -29,10 +31,23 @@ export class PaymentsController {
     @Post('dummy')
     @ApiOperation({ summary: 'Create a pending DummyPay purchase for the current user' })
     @ApiCreatedResponse({ type: CreateDummyPaymentResponseDto })
+    @ApiConflictResponse({ description: 'DUMMY_PAY_PENDING_EXISTS: recover the existing pending purchase before creating another' })
     @ApiUnauthorizedResponse({ description: 'JWT auth required' })
     @ApiNotFoundResponse({ description: 'DummyPay is disabled in production' })
     async createDummyPayment(@Req() req: any, @Body() body: CreateDummyPaymentDto) {
         return this.paymentsService.createDummyPayment(req.user.sub, body.plan);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth('jwt')
+    @Get('dummy/pending')
+    @ApiOperation({ summary: 'Recover all pending DummyPay purchases belonging to the current user', description: 'Read-only; no payment URL or token. Stable descending purchaseId order. Follow nextCursor until null. Development and staging only.' })
+    @ApiOkResponse({ type: PendingDummyPaymentsResponseDto })
+    @ApiBadRequestResponse({ description: 'Invalid limit or cursor' })
+    @ApiUnauthorizedResponse({ description: 'JWT auth required' })
+    @ApiNotFoundResponse({ description: 'DummyPay is disabled' })
+    async getPendingDummyPayments(@Req() req: any, @Query() query: PendingDummyPaymentsQueryDto): Promise<PendingDummyPaymentsResponseDto> {
+        return this.paymentsService.getPendingDummyPayments(req.user.sub, query.limit, query.cursor);
     }
 
     @UseGuards(JwtAuthGuard)

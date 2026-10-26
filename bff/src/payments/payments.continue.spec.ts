@@ -22,7 +22,8 @@ describe('DummyPay continuation', () => {
     let purchase: any;
     let user: { isPremium: boolean; isKroniq: boolean };
     const tx = {
-        purchase: { updateMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn() },
+        $queryRaw: jest.fn(),
+        purchase: { create: jest.fn(), updateMany: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn() },
         user: { update: jest.fn() },
     };
     const prisma = {
@@ -130,6 +131,9 @@ describe('DummyPay continuation', () => {
 
     it('protects existing create, status and cancel HTTP responses too', async () => {
         prisma.purchase.create.mockImplementation(async () => purchase);
+        tx.$queryRaw.mockResolvedValue([]);
+        tx.purchase.findFirst.mockResolvedValueOnce(null);
+        tx.purchase.create.mockImplementation(prisma.purchase.create);
         assertNoStore(await request(app.getHttpServer()).post('/payments/dummy')
             .auth(bearer, { type: 'bearer' }).send({ plan: 'KRONIQ' }).expect(201));
         assertNoStore(await request(app.getHttpServer()).get(`/payments/dummy/${purchaseId}/status`)

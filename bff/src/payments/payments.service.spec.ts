@@ -21,7 +21,10 @@ describe('PaymentsService', () => {
 
     function createService() {
         const tx = {
+            $queryRaw: jest.fn().mockResolvedValue([]),
             purchase: {
+                create: jest.fn(),
+                findFirst: jest.fn().mockResolvedValue(null),
                 updateMany: jest.fn(),
                 findUnique: jest.fn(),
             },
@@ -31,7 +34,7 @@ describe('PaymentsService', () => {
         };
         const prisma = {
             purchase: {
-                create: jest.fn(),
+                create: tx.purchase.create,
                 findFirst: jest.fn(),
             },
             $transaction: jest.fn(async (callback: (transaction: typeof tx) => Promise<unknown>) => callback(tx)),

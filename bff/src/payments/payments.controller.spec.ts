@@ -119,7 +119,10 @@ describe('PaymentsController HTTP', () => {
             return purchase;
         });
         const tx = {
+            $queryRaw: jest.fn().mockResolvedValue([]),
             purchase: {
+                create: prisma.purchase.create,
+                findFirst: jest.fn().mockResolvedValue(null),
                 updateMany: jest.fn(async ({ data }) => { Object.assign(purchase, data); return { count: 1 }; }),
                 findUnique: jest.fn(async () => purchase),
             },
