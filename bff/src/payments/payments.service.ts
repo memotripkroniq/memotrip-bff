@@ -231,6 +231,73 @@ export class PaymentsService {
         };
     }
 
+    async cancelDummyPayment(userId: string, purchaseId: string) {
+        this.assertDummyPayEnabled();
+
+        return this.prisma.$transaction(async (tx) => {
+            const where = { id: purchaseId, userId, provider: PurchaseProvider.DUMMY_PAY };
+            // The status predicate arbitrates against resolve: only one terminal transition wins.
+            await tx.purchase.updateMany({
+                where: { ...where, status: PurchaseStatus.PENDING },
+                data: { status: PurchaseStatus.FAILED, resolvedAt: new Date() },
+            });
+            const purchase = await tx.purchase.findFirst({
+                where,
+                select: { id: true, provider: true, status: true, plan: true },
+            });
+            if (!purchase) {
+                throw new NotFoundException('DummyPay purchase not found');
+            }
+            return {
+                purchaseId: purchase.id,
+                provider: purchase.provider,
+                status: purchase.status,
+                plan: purchase.plan,
+            };
+        });
+    }
+
+    async continueDummyPayment(userId: string, purchaseId: string) {
+        this.assertDummyPayEnabled();
+
+        return this.prisma.$transaction(async (tx) => {
+            const where = { id: purchaseId, userId, provider: PurchaseProvider.DUMMY_PAY };
+            const purchase = await tx.purchase.findFirst({
+                where,
+                select: { id: true, provider: true, status: true, plan: true },
+            });
+            if (!purchase) throw new NotFoundException('DummyPay purchase not found');
+            const response = {
+                purchaseId: purchase.id, provider: purchase.provider,
+                status: purchase.status, plan: purchase.plan,
+            };
+            if (purchase.status !== PurchaseStatus.PENDING) return response;
+
+            // Validate configuration before replacing a usable token.
+            const baseUrl = this.getPublicBaseUrl();
+            const token = this.createOpaqueToken();
+            const updated = await tx.purchase.updateMany({
+                where: { ...where, status: PurchaseStatus.PENDING },
+                data: { accessTokenHash: this.createTokenHash(token) },
+            });
+            if (updated.count === 0) {
+                const current = await tx.purchase.findFirst({
+                    where,
+                    select: { id: true, provider: true, status: true, plan: true },
+                });
+                if (!current) throw new NotFoundException('DummyPay purchase not found');
+                return {
+                    purchaseId: current.id, provider: current.provider,
+                    status: current.status, plan: current.plan,
+                };
+            }
+            return {
+                ...response,
+                paymentUrl: `${baseUrl}/payments/dummy/${purchase.id}?token=${encodeURIComponent(token)}`,
+            };
+        });
+    }
+
     async createDummyPayment(userId: string, plan: PurchasePlan) {
         this.assertDummyPayEnabled();
 
@@ -317,6 +384,8 @@ export class PaymentsService {
                 where: {
                     id: purchase.id,
                     status: PurchaseStatus.PENDING,
+                    provider: PurchaseProvider.DUMMY_PAY,
+                    accessTokenHash: purchase.accessTokenHash,
                 },
                 data: {
                     status: targetStatus,
@@ -330,7 +399,10 @@ export class PaymentsService {
                     select: { status: true },
                 });
 
-                return current?.status ?? targetStatus;
+                if (!current || current.status === PurchaseStatus.PENDING) {
+                    throw new NotFoundException('DummyPay purchase not found');
+                }
+                return current.status;
             }
 
             if (result === ResolveDummyPaymentResult.APPROVED) {

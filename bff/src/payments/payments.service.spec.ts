@@ -260,6 +260,8 @@ describe('PaymentsService', () => {
             where: {
                 id: 'purchase-premium',
                 status: PurchaseStatus.PENDING,
+                provider: PurchaseProvider.DUMMY_PAY,
+                accessTokenHash: 'a'.repeat(64),
             },
             data: {
                 status: PurchaseStatus.COMPLETED,
@@ -338,6 +340,8 @@ describe('PaymentsService', () => {
             where: {
                 id: 'purchase-refused',
                 status: PurchaseStatus.PENDING,
+                provider: PurchaseProvider.DUMMY_PAY,
+                accessTokenHash: 'c'.repeat(64),
             },
             data: {
                 status: PurchaseStatus.FAILED,
